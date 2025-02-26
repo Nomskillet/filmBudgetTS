@@ -1,0 +1,10 @@
+/* src/styles/global.css */
+body {
+    background-color: lightgray;
+    font-family: Arial, sans-serif;
+  }
+  
+  h1 {
+    color: blue;
+  }
+  
