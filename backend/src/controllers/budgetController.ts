@@ -2,39 +2,33 @@ import { Request, Response } from "express";
 import {
   addBudgetToDB,
   getBudgetsFromDB,
+  updateBudgetSpent,
+  deleteBudgetFromDB,
   Budget,
 } from "../services/budgetService";
-import { updateBudgetSpent } from "../services/budgetService";
-import { deleteBudgetFromDB } from "../services/budgetService";
+import { catchAsync } from "../utils/catchAsync"; // Import the async wrapper
 
-// Controller function to fetch all budgets
-export const getBudgets = (req: Request, res: Response): void => {
-  getBudgetsFromDB()
-    .then((budgets: Budget[]) => res.json(budgets))
-    .catch((error: Error) => {
-      console.error("Error fetching budgets:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    });
-};
+//Fetch all budgets
+export const getBudgets = catchAsync(async (req: Request, res: Response) => {
+  const budgets: Budget[] = await getBudgetsFromDB();
+  res.json(budgets);
+});
 
-// Controller function to add a budget
-export const addBudget = (req: Request, res: Response): void => {
+//Add a new budget
+export const addBudget = catchAsync(async (req: Request, res: Response) => {
   const { title, budget }: { title: string; budget: number } = req.body;
 
-  if (!title || !budget) {
-    res.status(400).json({ error: "Title and budget are required" });
+  if (!title || budget === undefined || isNaN(budget) || budget <= 0) {
+    res.status(400).json({ error: "Title is required and budget must be a positive number" });
     return;
   }
 
-  addBudgetToDB(title, budget)
-    .then((newBudget: Budget) => res.status(201).json(newBudget))
-    .catch((error: Error) => {
-      console.error("Error inserting budget:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    });
-};
+  const newBudget: Budget = await addBudgetToDB(title, budget);
+  res.status(201).json(newBudget);
+});
 
-export const updateBudget = (req: Request, res: Response): void => {
+//Update spent amount
+export const updateBudget = catchAsync(async (req: Request, res: Response) => {
   const id: number = Number(req.params.id);
   const { spent }: { spent: number } = req.body;
 
@@ -43,15 +37,12 @@ export const updateBudget = (req: Request, res: Response): void => {
     return;
   }
 
-  updateBudgetSpent(id, spent)
-    .then((updatedBudget) => res.json(updatedBudget))
-    .catch((error: Error) => {
-      console.error("Error updating budget:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    });
-};
+  const updatedBudget = await updateBudgetSpent(id, spent);
+  res.json(updatedBudget);
+});
 
-export const deleteBudget = (req: Request, res: Response): void => {
+//Delete a budget
+export const deleteBudget = catchAsync(async (req: Request, res: Response) => {
   const id: number = Number(req.params.id);
 
   if (!id) {
@@ -59,10 +50,6 @@ export const deleteBudget = (req: Request, res: Response): void => {
     return;
   }
 
-  deleteBudgetFromDB(id)
-    .then(() => res.status(204).send()) // No content response
-    .catch((error) => {
-      console.error("Error deleting budget:", error);
-      res.status(500).json({ error: "Internal Server Error" });
-    });
-};
+  await deleteBudgetFromDB(id);
+  res.status(204).send();
+});
