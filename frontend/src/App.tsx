@@ -1,6 +1,7 @@
 import { Routes, Route, Link } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import BudgetsPage from "./pages/BudgetsPage";
+import AddBudgetPage from "./pages/AddBudgetPage";
 import "./index.css";
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/budgets" element={<BudgetsPage />} />
+        <Route path="/add-budget" element={<AddBudgetPage />} />
       </Routes>
     </div>
   );

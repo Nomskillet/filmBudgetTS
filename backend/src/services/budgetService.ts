@@ -9,27 +9,35 @@ export interface Budget {
   created_at: Date;
 }
 
-// Service function to fetch all budgets
-export const getBudgetsFromDB = () =>
-  pool.query<Budget>("SELECT * FROM budgets").then((result) => result.rows);
+//Fetch all budgets
+export const getBudgetsFromDB = async () => {
+  const result = await pool.query<Budget>("SELECT * FROM budgets ORDER BY created_at DESC");
+  return result.rows;
+};
 
-// Service function to add a budget
-export const addBudgetToDB = (title: string, budget: number) =>
-  pool
-    .query<Budget>(
-      "INSERT INTO budgets (title, budget, spent) VALUES ($1, $2, $3) RETURNING *",
-      [title, budget, 0]
-    )
-    .then((result) => result.rows[0]);
+//Add a budget to the database
+export const addBudgetToDB = async (title: string, budget: number) => {
+  const result = await pool.query<Budget>(
+    "INSERT INTO budgets (title, budget, spent) VALUES ($1, $2, $3) RETURNING *",
+    [title, budget, 0]
+  );
+  return result.rows[0];
+};
 
-// Service function to edit budgets
-export const updateBudgetSpent = (id: number, spent: number) =>
-  pool
-    .query<Budget>("UPDATE budgets SET spent = $1 WHERE id = $2 RETURNING *", [
-      spent,
-      id,
-    ])
-    .then((result) => result.rows[0]);
+//Update spent amount and calculate remaining budget
+export const updateBudgetSpent = async (id: number, spent: number) => {
+  const result = await pool.query<Budget>(
+    `UPDATE budgets 
+     SET spent = spent + $1, 
+         remaining = remaining - $1 
+     WHERE id = $2 
+     RETURNING *`,
+    [spent, id]
+  );
+  return result.rows[0];
+};
 
-export const deleteBudgetFromDB = (id: number) =>
-  pool.query("DELETE FROM budgets WHERE id = $1", [id]).then(() => null);
+//Delete a budget
+export const deleteBudgetFromDB = async (id: number) => {
+  await pool.query("DELETE FROM budgets WHERE id = $1", [id]);
+};
