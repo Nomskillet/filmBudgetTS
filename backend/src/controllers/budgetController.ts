@@ -1,55 +1,50 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import {
-  addBudgetToDB,
+  addBudgetsToDB,
   getBudgetsFromDB,
   updateBudgetSpent,
   deleteBudgetFromDB,
   Budget,
 } from "../services/budgetService";
-import { catchAsync } from "../utils/catchAsync"; // Import the async wrapper
 
-//Fetch all budgets
-export const getBudgets = catchAsync(async (req: Request, res: Response) => {
-  const budgets: Budget[] = await getBudgetsFromDB();
-  res.json(budgets);
-});
+// ✅ Get all budgets (returns an array)
+export const getBudgets = async (req: Request, res: Response): Promise<void> => {
+  const budgets = await getBudgetsFromDB();
+  res.json([budgets]);  // 🔄 Wrap in an array
+};
 
-//Add a new budget
-export const addBudget = catchAsync(async (req: Request, res: Response) => {
-  const { title, budget }: { title: string; budget: number } = req.body;
+// ✅ Add multiple budgets (returns an array)
+export const addBudgets = async (req: Request, res: Response): Promise<void> => {
+  const budgets = req.body.budgets;
 
-  if (!title || budget === undefined || isNaN(budget) || budget <= 0) {
-    res.status(400).json({ error: "Title is required and budget must be a positive number" });
+  if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
+    res.status(400).json([{ error: "Invalid or missing budgets array" }]);  // 🔄 Wrap error in an array
     return;
   }
 
-  const newBudget: Budget = await addBudgetToDB(title, budget);
-  res.status(201).json(newBudget);
-});
+  await addBudgetsToDB(budgets);
+  res.status(201).json([{ message: "Budgets added successfully" }]);  // 🔄 Wrap success message in an array
+};
 
-//Update spent amount
-export const updateBudget = catchAsync(async (req: Request, res: Response) => {
-  const id: number = Number(req.params.id);
-  const { spent }: { spent: number } = req.body;
+// ✅ Update budget (returns an array)
+export const updateBudget = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { id } = req.params;
+  const { spent } = req.body;
+  const updatedBudget = await updateBudgetSpent(Number(id), spent);
+  res.json([updatedBudget]);  // 🔄 Wrap in an array
+};
 
-  if (!id || spent === undefined) {
-    res.status(400).json({ error: "Budget ID and spent amount are required" });
-    return;
-  }
-
-  const updatedBudget = await updateBudgetSpent(id, spent);
-  res.json(updatedBudget);
-});
-
-//Delete a budget
-export const deleteBudget = catchAsync(async (req: Request, res: Response) => {
-  const id: number = Number(req.params.id);
-
-  if (!id) {
-    res.status(400).json({ error: "Budget ID is required" });
-    return;
-  }
-
-  await deleteBudgetFromDB(id);
-  res.status(204).send();
-});
+// ✅ Delete budget (returns an array with message)
+export const deleteBudget = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { id } = req.params;
+  await deleteBudgetFromDB(Number(id));
+  res.status(204).json([{ message: "Budget deleted successfully" }]);  // 🔄 Wrap in an array
+};
