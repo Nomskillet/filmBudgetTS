@@ -18,25 +18,34 @@ function BudgetsPage() {
   const [newSpent, setNewSpent] = useState<number>(0);
 
   useEffect(() => {
-    fetch("http://localhost:5001/api/budgets")
-      .then((res) => {
+    const fetchBudgets = async () => {
+      try {
+        const res = await fetch("http://localhost:5001/api/budgets");
         if (!res.ok) {
           throw new Error("Failed to fetch budgets");
         }
-        return res.json();
-      })
-      .then((data) => {
-        setBudgets(data);
+        const data = await res.json();
+        console.log("Fetched Budgets:", data);
+
+        if (Array.isArray(data) && Array.isArray(data[0])) {
+          setBudgets(data[0]);
+        } else if (Array.isArray(data)) {
+          setBudgets(data);
+        } else {
+          setError("Invalid data format received from server.");
+        }
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Error fetching budgets:", err);
         setError(err.message);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchBudgets();
   }, []);
 
-  // ✅ DELETE Budget Function
+  // 🛠 DELETE Budget Function
   const handleDelete = async (id: number) => {
     try {
       const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
@@ -45,14 +54,13 @@ function BudgetsPage() {
 
       if (!response.ok) throw new Error("Failed to delete budget");
 
-      // ✅ Remove the deleted budget from state
       setBudgets((prevBudgets) => prevBudgets.filter((b) => b.id !== id));
     } catch (err) {
       console.error("Error deleting budget:", err);
     }
   };
 
-  // ✅ UPDATE Budget Function
+  // 🛠 UPDATE Budget Function
   const handleUpdate = async (id: number) => {
     try {
       const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
@@ -63,7 +71,6 @@ function BudgetsPage() {
 
       if (!response.ok) throw new Error("Failed to update budget");
 
-      // ✅ Update budget in state
       setBudgets((prevBudgets) =>
         prevBudgets.map((budget) =>
           budget.id === id
@@ -76,7 +83,7 @@ function BudgetsPage() {
         )
       );
 
-      setEditingId(null); // ✅ Close edit mode after updating
+      setEditingId(null);
     } catch (err) {
       console.error("Error updating budget:", err);
     }
@@ -135,7 +142,7 @@ function BudgetsPage() {
               <button
                 onClick={() => {
                   setEditingId(budget.id);
-                  setNewSpent(budget.spent); // ✅ Set input field to the actual spent amount
+                  setNewSpent(budget.spent);
                 }}
                 className="mt-2 px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-700"
               >
