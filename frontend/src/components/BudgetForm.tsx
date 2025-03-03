@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { z } from "zod"; // ✅ Import Zod
-import { useForm, useFieldArray } from "react-hook-form"; // ✅ Import React Hook Form and Field Array
-import { zodResolver } from "@hookform/resolvers/zod"; // ✅ Import resolver
-import { useNavigate } from "react-router-dom"; // ✅ Import navigation
+import { useState } from 'react';
+import { z } from 'zod'; // ✅ Import Zod
+import { useForm, useFieldArray } from 'react-hook-form'; // ✅ Import React Hook Form and Field Array
+import { zodResolver } from '@hookform/resolvers/zod'; // ✅ Import resolver
+import { useNavigate } from 'react-router-dom'; // ✅ Import navigation
 
 // ✅ Define the validation schema using Zod for multiple budgets
 const budgetSchema = z.object({
   budgets: z.array(
     z.object({
-      title: z.string().min(3, "Title must be at least 3 characters"),
+      title: z.string().min(3, 'Title must be at least 3 characters'),
       budget: z
-        .number({ invalid_type_error: "Budget must be a number" })
-        .positive("Budget must be greater than 0"),
+        .number({ invalid_type_error: 'Budget must be a number' })
+        .positive('Budget must be greater than 0'),
     })
   ),
 });
@@ -30,41 +30,40 @@ function BudgetForm() {
   } = useForm<BudgetFormInputs>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
-      budgets: [{ title: "", budget: 0 }],
+      budgets: [{ title: '', budget: 0 }],
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "budgets",
+    name: 'budgets',
   });
 
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState('');
 
   const onSubmit = async (data: BudgetFormInputs) => {
-    setErrorMessage("");
-  
+    setErrorMessage('');
+
     try {
-      const response = await fetch("http://localhost:5001/api/budget", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('http://localhost:5001/api/budget', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ budgets: data.budgets }), // ✅ Wrap data in { budgets: [...] }
       });
-  
+
       if (!response.ok) {
-        throw new Error("Failed to add budgets");
+        throw new Error('Failed to add budgets');
       }
-  
-      console.log("Budgets added successfully");
-  
+
+      console.log('Budgets added successfully');
+
       reset(); // ✅ Clear input fields after successful submission
-      navigate("/budgets"); // ✅ Redirect to the Budget Dashboard
+      navigate('/budgets'); // ✅ Redirect to the Budget Dashboard
     } catch (err) {
-      setErrorMessage("Error adding budgets. Please try again.");
+      setErrorMessage('Error adding budgets. Please try again.');
       console.error(err);
     }
   };
-  
 
   return (
     <div className="max-w-md mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
@@ -74,9 +73,7 @@ function BudgetForm() {
       <form onSubmit={handleSubmit(onSubmit)}>
         {fields.map((field, index) => (
           <div key={field.id} className="mb-4">
-            <h3 className="text-xl font-semibold mb-2">
-              Budget {index + 1}
-            </h3>
+            <h3 className="text-xl font-semibold mb-2">Budget {index + 1}</h3>
             {/* Budget Title */}
             <label className="block mb-2">Budget Title</label>
             <input
@@ -117,7 +114,7 @@ function BudgetForm() {
 
         <button
           type="button"
-          onClick={() => append({ title: "", budget: 0 })}
+          onClick={() => append({ title: '', budget: 0 })}
           className="text-blue-500 mb-2"
         >
           + Add Another Budget
@@ -135,4 +132,3 @@ function BudgetForm() {
 }
 
 export default BudgetForm;
-
