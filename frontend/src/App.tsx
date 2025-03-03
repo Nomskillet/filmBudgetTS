@@ -1,8 +1,8 @@
-import { Routes, Route, Link } from "react-router-dom";
-import HomePage from "./pages/HomePage";
-import BudgetsPage from "./pages/BudgetsPage";
-import AddBudgetPage from "./pages/AddBudgetPage";
-import "./index.css";
+import { Routes, Route, Link } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import BudgetsPage from './pages/BudgetsPage';
+import AddBudgetPage from './pages/AddBudgetPage';
+import './index.css';
 
 function App() {
   return (
