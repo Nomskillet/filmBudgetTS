@@ -1,0 +1,2 @@
+npx eslint . --ext .js,.jsx,.ts,.tsx
+npx prettier --check .
