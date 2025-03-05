@@ -5,7 +5,10 @@ import pool from '../db';
 import jwt from 'jsonwebtoken';
 
 // Register User
-export const registerUser = async (req: Request, res: Response): Promise<Response> => {
+export const registerUser = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -22,9 +25,15 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
     );
 
     const user = result.rows[0];
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: '1h' }
+    );
 
-    return res.status(201).json({ token, user: { id: user.id, email: user.email } });
+    return res
+      .status(201)
+      .json({ token, user: { id: user.id, email: user.email } });
   } catch (err) {
     console.error('Error registering user:', err);
     return res.status(500).json({ error: 'Server error' });
@@ -32,6 +41,11 @@ export const registerUser = async (req: Request, res: Response): Promise<Respons
 };
 
 // Dummy loginUser function to fix the import error temporarily
-export const loginUser = async (req: Request, res: Response): Promise<Response> => {
-  return res.status(200).json({ message: 'Login endpoint is not yet implemented.' });
+export const loginUser = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  return res
+    .status(200)
+    .json({ message: 'Login endpoint is not yet implemented.' });
 };
