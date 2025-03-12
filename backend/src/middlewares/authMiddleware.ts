@@ -3,13 +3,8 @@ import { Request, Response, NextFunction } from 'express';
 
 declare module 'express' {
   interface Request {
-    user?: DecodedUser;
+    user?: { id: number; email?: string };
   }
-}
-
-interface DecodedUser {
-  id: number;
-  email?: string; // Optional in case it's not in the token
 }
 
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -22,14 +17,16 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     return;
   }
 
-  const decoded = jwt.verify(token, JWT_SECRET) as DecodedUser | undefined;
+  const decoded = jwt.verify(token, JWT_SECRET) as
+    | { id: number; email?: string }
+    | undefined;
 
-  if (!decoded) {
+  if (!decoded?.id) {
     res.status(401).json({ message: 'Unauthorized: Invalid token' });
     return;
   }
 
-  req.user = decoded; // ✅ Now matches the updated interface
+  req.user = { id: decoded.id, email: decoded.email };
   next();
 };
 
