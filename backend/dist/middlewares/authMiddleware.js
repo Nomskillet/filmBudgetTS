@@ -6,6 +6,7 @@ var __importDefault =
   };
 Object.defineProperty(exports, '__esModule', { value: true });
 const jsonwebtoken_1 = __importDefault(require('jsonwebtoken'));
+const JWT_SECRET = process.env.JWT_SECRET;
 const authMiddleware = (req, res, next) => {
   var _a;
   const token =
@@ -13,17 +14,15 @@ const authMiddleware = (req, res, next) => {
       ? void 0
       : _a.split(' ')[1];
   if (!token) {
-    return res.status(401).json({ message: 'Unauthorized' });
+    res.status(401).json({ message: 'Unauthorized: No token provided' });
+    return;
   }
-  try {
-    const decoded = jsonwebtoken_1.default.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-    req.user = decoded; // ✅ Attach user with proper type
-    next(); // ✅ Call next() without returning a response
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
+  const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+  if (!decoded) {
+    res.status(401).json({ message: 'Unauthorized: Invalid token' });
+    return;
   }
+  req.user = decoded; // ✅ Now matches the updated interface
+  next();
 };
 exports.default = authMiddleware;

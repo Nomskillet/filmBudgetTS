@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClipLoader from 'react-spinners/ClipLoader';
+
 interface Budget {
   id: number;
   title: string;
@@ -21,20 +22,35 @@ function BudgetsPage() {
   const [newSpent, setNewSpent] = useState<number>(0);
   const [search, setSearch] = useState<string>('');
 
+  const navigate = useNavigate(); // ✅ Use for redirection
+
   useEffect(() => {
     const fetchBudgets = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/budgets');
-        if (!res.ok) {
-          throw new Error('Failed to fetch budgets');
+        const token = localStorage.getItem('token'); // ✅ Get token from localStorage
+        if (!token) {
+          throw new Error('No authentication token found. Please log in.');
         }
+
+        const res = await fetch('http://localhost:5001/api/budgets', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // ✅ Send token in header
+          },
+        });
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error('Unauthorized: Please log in again.');
+          } else {
+            throw new Error('Failed to fetch budgets');
+          }
+        }
+
         const data = await res.json();
         console.log('Fetched Budgets:', data);
 
-        if (Array.isArray(data) && Array.isArray(data[0])) {
-          setBudgets(data[0]);
-          setFilteredBudgets(data[0]);
-        } else if (Array.isArray(data)) {
+        if (Array.isArray(data)) {
           setBudgets(data);
           setFilteredBudgets(data);
         } else {
@@ -44,18 +60,22 @@ function BudgetsPage() {
       } catch (err) {
         console.error('Error fetching budgets:', err);
 
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('An unknown error occurred.');
-        }
+        // Ensure err is treated as an Error object
+        const errorMessage =
+          err instanceof Error ? err.message : 'An unknown error occurred.';
 
+        setError(errorMessage);
         setLoading(false);
+
+        if (errorMessage.includes('Unauthorized')) {
+          toast.error('Session expired. Redirecting to login...');
+          setTimeout(() => navigate('/login'), 2000);
+        }
       }
     };
 
     fetchBudgets();
-  }, []);
+  }, [navigate]);
 
   // Filter budgets by search input
   useEffect(() => {
@@ -68,8 +88,14 @@ function BudgetsPage() {
   // DELETE Budget Function
   const handleDelete = async (id: number) => {
     try {
+      const token = localStorage.getItem('token'); // ✅ Ensure token is sent
+      if (!token) throw new Error('Unauthorized request');
+
       const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ Send token in header
+        },
       });
 
       if (!response.ok) throw new Error('Failed to delete budget');
@@ -85,9 +111,15 @@ function BudgetsPage() {
   // UPDATE Budget Function
   const handleUpdate = async (id: number) => {
     try {
+      const token = localStorage.getItem('token'); // ✅ Ensure token is sent
+      if (!token) throw new Error('Unauthorized request');
+
       const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // ✅ Send token in header
+        },
         body: JSON.stringify({ spent: newSpent }),
       });
 
@@ -115,11 +147,11 @@ function BudgetsPage() {
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen">
-        <ClipLoader color="#4f46e5" size={60} /> {/* ✅ Loading Spinner */}
+        <ClipLoader color="#4f46e5" size={60} />
       </div>
     );
 
-  if (error) return <p>Error: {error}</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="max-w-4xl mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">

@@ -11,13 +11,25 @@ import {
   createBudgetSchema,
   updateBudgetSchema,
 } from '../schemas/budgetSchema';
+import authMiddleware from '../middlewares/authMiddleware';
 
 const router = Router();
 
-router.get('/budgets', getBudgets);
-router.post('/budget', validate(createBudgetSchema), addBudgets);
-router.patch('/budget/:id', validate(updateBudgetSchema), updateBudget);
-router.delete('/budget/:id', deleteBudget);
-router.get('/budgets/:budgetId/items', getBudgetItems);
+// ✅ Protect all routes with authMiddleware
+router.get('/budgets', authMiddleware, getBudgets);
+router.post(
+  '/budget',
+  authMiddleware,
+  validate(createBudgetSchema),
+  addBudgets
+);
+router.patch(
+  '/budget/:id',
+  authMiddleware,
+  validate(updateBudgetSchema),
+  updateBudget
+);
+router.delete('/budget/:id', authMiddleware, deleteBudget);
+router.get('/budgets/:budgetId/items', authMiddleware, getBudgetItems);
 
 export default router;

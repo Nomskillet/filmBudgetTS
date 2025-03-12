@@ -73,7 +73,9 @@ exports.registerUser = (0, catchAsync_1.catchAsync)((req, res) =>
     const token = jsonwebtoken_1.default.sign(
       { id: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      {
+        expiresIn: '1h',
+      }
     );
     res.status(201).json({ token, user: { id: user.id, email: user.email } });
   })
@@ -109,7 +111,9 @@ exports.loginUser = (0, catchAsync_1.catchAsync)((req, res) =>
     const token = jsonwebtoken_1.default.sign(
       { id: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      {
+        expiresIn: '1h',
+      }
     );
     res.status(200).json({ token, user: { id: user.id, email: user.email } });
   })
