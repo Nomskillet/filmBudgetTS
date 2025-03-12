@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import pool from '../db';
-import { catchAsync } from '../utils/catchAsync';
+import catchAsync from '../utils/catchAsync';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 

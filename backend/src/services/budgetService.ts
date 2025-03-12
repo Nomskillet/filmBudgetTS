@@ -9,17 +9,22 @@ export interface Budget {
   created_at: Date;
 }
 
-// Fetch all budgets with specific columns only
-export const getBudgetsFromDB = () =>
+// Fetch budgets for a specific user
+export const getBudgetsFromDB = (userId: number) =>
   pool
     .query<Budget>(
-      'SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at FROM budgets ORDER BY created_at DESC'
+      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at 
+       FROM budgets 
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [userId]
     )
     .then((result) => result.rows);
 
-//  Add multiple budgets to the database
+// Add multiple budgets for a specific user
 export const addBudgetsToDB = async (
-  budgets: { title: string; budget: number }[]
+  budgets: { title: string; budget: number }[],
+  userId: number
 ) => {
   const client = await pool.connect();
 
@@ -28,8 +33,8 @@ export const addBudgetsToDB = async (
 
     for (const budget of budgets) {
       await client.query(
-        'INSERT INTO budgets (title, budget) VALUES ($1, $2)',
-        [budget.title, budget.budget]
+        'INSERT INTO budgets (title, budget, user_id) VALUES ($1, $2, $3)',
+        [budget.title, budget.budget, userId]
       );
     }
 
@@ -42,32 +47,38 @@ export const addBudgetsToDB = async (
   }
 };
 
-// Update spent amount and return specific columns
-export const updateBudgetSpent = (id: number, spent: number) =>
+// Update spent amount for a budget that belongs to the user
+export const updateBudgetSpent = (id: number, spent: number, userId: number) =>
   pool
     .query<Budget>(
       `UPDATE budgets 
        SET spent = spent + $1 
-       WHERE id = $2 
+       WHERE id = $2 AND user_id = $3
        RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at`,
-      [spent, id]
+      [spent, id, userId]
     )
     .then((result) => result.rows[0]);
 
-// ✅ Delete a budget and return deleted budget details
-export const deleteBudgetFromDB = (id: number) =>
+// ✅ Delete a budget only if it belongs to the user
+export const deleteBudgetFromDB = (id: number, userId: number) =>
   pool
     .query<Budget>(
-      'DELETE FROM budgets WHERE id = $1 RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at',
-      [id]
+      `DELETE FROM budgets 
+       WHERE id = $1 AND user_id = $2
+       RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at`,
+      [id, userId]
     )
     .then((result) => result.rows[0]);
 
-// ✅ Fetch items for a specific budget
-export const getBudgetItemsFromDB = (budgetId: number) =>
+// ✅ Fetch items for a specific budget that belongs to the user
+export const getBudgetItemsFromDB = (budgetId: number, userId: number) =>
   pool
     .query(
-      `SELECT id, budget_id, description, amount, created_at FROM budget_items WHERE budget_id = $1 ORDER BY created_at DESC`,
-      [budgetId]
+      `SELECT id, budget_id, description, amount, created_at 
+       FROM budget_items 
+       WHERE budget_id = $1 AND budget_id IN 
+         (SELECT id FROM budgets WHERE user_id = $2) 
+       ORDER BY created_at DESC`,
+      [budgetId, userId]
     )
     .then((result) => result.rows);

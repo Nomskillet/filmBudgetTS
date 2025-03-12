@@ -45,55 +45,104 @@ exports.getBudgetItems =
   exports.getBudgets =
     void 0;
 const budgetService_1 = require('../services/budgetService');
-const catchAsync_1 = __importDefault(require('../middlewares/catchAsync')); // Import catchAsync
-// Get all budgets
+const catchAsync_1 = __importDefault(require('../middlewares/catchAsync'));
+// Get budgets for the logged-in user
 exports.getBudgets = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
-    const budgets = yield (0, budgetService_1.getBudgetsFromDB)();
-    res.json(budgets); // ✅ Always returns an array, even if empty
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const budgets = yield (0, budgetService_1.getBudgetsFromDB)(userId);
+    res.json(budgets);
   })
 );
-// Add multiple budgets
+// Add budgets & link them to the logged-in user
 exports.addBudgets = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
     const budgets = req.body.budgets;
     if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
       res.status(400).json({ error: 'Invalid or missing budgets array' });
       return;
     }
-    yield (0, budgetService_1.addBudgetsToDB)(budgets);
+    yield (0, budgetService_1.addBudgetsToDB)(budgets, userId);
     res.status(201).json({ message: 'Budgets added successfully' });
   })
 );
-// Update budget
+// Update a budget only if it belongs to the user
 exports.updateBudget = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const { id } = req.params;
     const { spent } = req.body;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
     const updatedBudget = yield (0, budgetService_1.updateBudgetSpent)(
       Number(id),
-      spent
+      spent,
+      userId
     );
-    res.json(updatedBudget ? [updatedBudget] : []); // Return an array, even if empty
+    if (!updatedBudget) {
+      res.status(403).json({
+        error: 'Forbidden: Budget not found or does not belong to you',
+      });
+      return;
+    }
+    res.json([updatedBudget]);
   })
 );
-// Delete budget
+// Delete a budget only if it belongs to the user
 exports.deleteBudget = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const { id } = req.params;
-    yield (0, budgetService_1.deleteBudgetFromDB)(Number(id));
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const deletedBudget = yield (0, budgetService_1.deleteBudgetFromDB)(
+      Number(id),
+      userId
+    );
+    if (!deletedBudget) {
+      res.status(403).json({
+        error: 'Forbidden: Budget not found or does not belong to you',
+      });
+      return;
+    }
     res.status(204).send();
   })
 );
-// Get budget items for a specific budget
-const getBudgetItems = (req, res) =>
+// Get budget items only for a budget that belongs to the user
+exports.getBudgetItems = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const budgetId = parseInt(req.params.budgetId, 10);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
     if (isNaN(budgetId)) {
       res.status(400).json({ error: 'Invalid budget ID' });
       return;
     }
-    const items = yield (0, budgetService_1.getBudgetItemsFromDB)(budgetId);
+    const items = yield (0, budgetService_1.getBudgetItemsFromDB)(
+      budgetId,
+      userId
+    );
     res.json(items);
-  });
-exports.getBudgetItems = getBudgetItems;
+  })
+);

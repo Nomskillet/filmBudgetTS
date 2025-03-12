@@ -3,7 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-function LoginPage() {
+function LoginPage({
+  setIsLoggedIn,
+}: {
+  setIsLoggedIn: (value: boolean) => void;
+}) {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,6 +27,7 @@ function LoginPage() {
       if (response.ok) {
         toast.success('Login successful!');
         localStorage.setItem('token', data.token); // ✅ Store token
+        setIsLoggedIn(true); // ✅ Update login state immediately
         setTimeout(() => navigate('/budgets'), 1000); // ✅ Redirect after success
       } else {
         toast.error(data.error || 'Invalid credentials');

@@ -42,10 +42,10 @@ exports.loginUser = exports.registerUser = void 0;
 const bcrypt_1 = __importDefault(require('bcrypt'));
 const jsonwebtoken_1 = __importDefault(require('jsonwebtoken'));
 const db_1 = __importDefault(require('../db'));
-const catchAsync_1 = require('../utils/catchAsync');
+const catchAsync_1 = __importDefault(require('../utils/catchAsync'));
 const JWT_SECRET = process.env.JWT_SECRET;
 // Register User
-exports.registerUser = (0, catchAsync_1.catchAsync)((req, res) =>
+exports.registerUser = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -81,7 +81,7 @@ exports.registerUser = (0, catchAsync_1.catchAsync)((req, res) =>
   })
 );
 // Login User
-exports.loginUser = (0, catchAsync_1.catchAsync)((req, res) =>
+exports.loginUser = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     if (!email || !password) {

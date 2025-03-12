@@ -20,6 +20,7 @@ type BudgetFormInputs = z.infer<typeof budgetSchema>; // ✅ Infer TypeScript ty
 
 function BudgetForm() {
   const navigate = useNavigate(); // ✅ React Router navigation
+  const token = localStorage.getItem('token'); // ✅ Retrieve token
 
   const {
     register,
@@ -41,28 +42,30 @@ function BudgetForm() {
 
   const [errorMessage, setErrorMessage] = useState('');
 
-  const onSubmit = async (data: BudgetFormInputs) => {
+  const onSubmit = (data: BudgetFormInputs) => {
     setErrorMessage('');
 
-    try {
-      const response = await fetch('http://localhost:5001/api/budget', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ budgets: data.budgets }), // ✅ Wrap data in { budgets: [...] }
+    fetch('http://localhost:5001/api/budget', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ Send token
+      },
+      body: JSON.stringify({ budgets: data.budgets }), // ✅ Wrap data in { budgets: [...] }
+    })
+      .then((response) => {
+        if (!response.ok) return Promise.reject('Failed to add budgets');
+        return response.json();
+      })
+      .then(() => {
+        console.log('Budgets added successfully');
+        reset(); // ✅ Clear input fields after successful submission
+        navigate('/budgets'); // ✅ Redirect to the Budget Dashboard
+      })
+      .catch((err) => {
+        setErrorMessage('Error adding budgets. Please try again.');
+        console.error(err);
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to add budgets');
-      }
-
-      console.log('Budgets added successfully');
-
-      reset(); // ✅ Clear input fields after successful submission
-      navigate('/budgets'); // ✅ Redirect to the Budget Dashboard
-    } catch (err) {
-      setErrorMessage('Error adding budgets. Please try again.');
-      console.error(err);
-    }
   };
 
   return (
