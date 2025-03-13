@@ -9,7 +9,7 @@ export interface Budget {
   created_at: Date;
 }
 
-// Fetch budgets for a specific user
+// ✅ Fetch budgets for a specific user
 export const getBudgetsFromDB = (userId: number) =>
   pool
     .query<Budget>(
@@ -21,7 +21,7 @@ export const getBudgetsFromDB = (userId: number) =>
     )
     .then((result) => result.rows);
 
-// Add multiple budgets for a specific user
+// ✅ Add multiple budgets for a specific user
 export const addBudgetsToDB = async (
   budgets: { title: string; budget: number }[],
   userId: number
@@ -29,35 +29,42 @@ export const addBudgetsToDB = async (
   const client = await pool.connect();
 
   try {
-    await client.query('BEGIN'); // ✅ Start transaction
+    await client.query('BEGIN');
 
     for (const budget of budgets) {
       await client.query(
-        'INSERT INTO budgets (title, budget, user_id) VALUES ($1, $2, $3)',
+        'INSERT INTO budgets (title, budget, spent, user_id) VALUES ($1, $2, 0, $3)',
         [budget.title, budget.budget, userId]
       );
     }
 
-    await client.query('COMMIT'); // ✅ Commit transaction if all inserts succeed
+    await client.query('COMMIT');
   } catch (err) {
-    await client.query('ROLLBACK'); // ✅ Rollback if any insert fails
+    await client.query('ROLLBACK');
     throw err;
   } finally {
-    client.release(); // ✅ Release client back to pool
+    client.release();
   }
 };
 
-// Update spent amount for a budget that belongs to the user
-export const updateBudgetSpent = (id: number, spent: number, userId: number) =>
-  pool
-    .query<Budget>(
-      `UPDATE budgets 
-       SET spent = spent + $1 
-       WHERE id = $2 AND user_id = $3
-       RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at`,
-      [spent, id, userId]
-    )
-    .then((result) => result.rows[0]);
+// ✅ Update budget (title, budget, spent) for a user
+export const updateBudgetInDB = async (
+  id: number,
+  title: string,
+  budget: number,
+  spent: number,
+  userId: number
+) => {
+  const result = await pool.query<Budget>(
+    `UPDATE budgets 
+     SET title = $1, budget = $2, spent = $3 
+     WHERE id = $4 AND user_id = $5
+     RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at`,
+    [title, budget, spent, id, userId]
+  );
+
+  return result.rows[0];
+};
 
 // ✅ Delete a budget only if it belongs to the user
 export const deleteBudgetFromDB = (id: number, userId: number) =>
@@ -70,15 +77,45 @@ export const deleteBudgetFromDB = (id: number, userId: number) =>
     )
     .then((result) => result.rows[0]);
 
-// ✅ Fetch items for a specific budget that belongs to the user
-export const getBudgetItemsFromDB = (budgetId: number, userId: number) =>
-  pool
+// ✅ FIXED: Fetch expenses (NOT budget_items)
+export const getBudgetItemsFromDB = (budgetId: number, userId: number) => {
+  console.log('Fetching items for:', { budgetId, userId });
+
+  return pool
     .query(
       `SELECT id, budget_id, description, amount, created_at 
-       FROM budget_items 
-       WHERE budget_id = $1 AND budget_id IN 
-         (SELECT id FROM budgets WHERE user_id = $2) 
+       FROM expenses 
+       WHERE budget_id = $1 
+       AND budget_id IN (SELECT id FROM budgets WHERE user_id = $2) 
        ORDER BY created_at DESC`,
       [budgetId, userId]
+    )
+    .then((result) => {
+      console.log('Query result:', result.rows);
+      return result.rows;
+    });
+};
+
+// ✅ Add an expense to the database
+export const addExpenseToDB = (
+  budgetId: number,
+  description: string,
+  amount: number
+) =>
+  pool.query(
+    `INSERT INTO expenses (budget_id, description, amount) 
+     VALUES ($1, $2, $3)`,
+    [budgetId, description, amount]
+  );
+
+// ✅ Get all expenses for a budget
+export const getExpensesFromDB = (budgetId: number) =>
+  pool
+    .query(
+      `SELECT id, description, amount, created_at 
+       FROM expenses 
+       WHERE budget_id = $1 
+       ORDER BY created_at DESC`,
+      [budgetId]
     )
     .then((result) => result.rows);

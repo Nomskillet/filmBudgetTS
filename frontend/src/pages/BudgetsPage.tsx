@@ -19,129 +19,143 @@ function BudgetsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [newSpent, setNewSpent] = useState<number>(0);
+  const [editData, setEditData] = useState({
+    title: '',
+    budget: '',
+    spent: '',
+  });
   const [search, setSearch] = useState<string>('');
 
-  const navigate = useNavigate(); // ✅ Use for redirection
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBudgets = async () => {
-      try {
-        const token = localStorage.getItem('token'); // ✅ Get token from localStorage
-        if (!token) {
-          throw new Error('No authentication token found. Please log in.');
-        }
-
-        const res = await fetch('http://localhost:5001/api/budgets', {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // ✅ Send token in header
-          },
-        });
-
-        if (!res.ok) {
-          if (res.status === 401) {
-            throw new Error('Unauthorized: Please log in again.');
-          } else {
-            throw new Error('Failed to fetch budgets');
-          }
-        }
-
-        const data = await res.json();
-        console.log('Fetched Budgets:', data);
-
-        if (Array.isArray(data)) {
-          setBudgets(data);
-          setFilteredBudgets(data);
-        } else {
-          setError('Invalid data format received from server.');
-        }
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No authentication token found. Please log in.');
         setLoading(false);
-      } catch (err) {
-        console.error('Error fetching budgets:', err);
-
-        // Ensure err is treated as an Error object
-        const errorMessage =
-          err instanceof Error ? err.message : 'An unknown error occurred.';
-
-        setError(errorMessage);
-        setLoading(false);
-
-        if (errorMessage.includes('Unauthorized')) {
-          toast.error('Session expired. Redirecting to login...');
-          setTimeout(() => navigate('/login'), 2000);
-        }
+        return;
       }
+
+      const res = await fetch('http://localhost:5001/api/budgets', {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        setLoading(false);
+        setError(
+          res.status === 401
+            ? 'Unauthorized: Please log in again.'
+            : 'Failed to fetch budgets'
+        );
+        return;
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setBudgets(data);
+        setFilteredBudgets(data);
+      } else {
+        setError('Invalid data format received from server.');
+      }
+
+      setLoading(false);
     };
 
     fetchBudgets();
   }, [navigate]);
 
-  // Filter budgets by search input
   useEffect(() => {
-    const filtered = budgets.filter((budget) =>
-      budget.title.toLowerCase().includes(search.toLowerCase())
+    setFilteredBudgets(
+      budgets.filter((budget) =>
+        budget.title.toLowerCase().includes(search.toLowerCase())
+      )
     );
-    setFilteredBudgets(filtered);
   }, [search, budgets]);
 
-  // DELETE Budget Function
   const handleDelete = async (id: number) => {
-    try {
-      const token = localStorage.getItem('token'); // ✅ Ensure token is sent
-      if (!token) throw new Error('Unauthorized request');
-
-      const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ Send token in header
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to delete budget');
-
-      setBudgets((prevBudgets) => prevBudgets.filter((b) => b.id !== id));
-      toast.success('Budget deleted successfully!');
-    } catch (err) {
-      console.error('Error deleting budget:', err);
-      toast.error('Error deleting budget. Please try again.');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Unauthorized request');
+      return;
     }
+
+    const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      toast.error('Failed to delete budget');
+      return;
+    }
+
+    setBudgets((prevBudgets) => prevBudgets.filter((b) => b.id !== id));
+    toast.success('Budget deleted successfully!');
   };
 
-  // UPDATE Budget Function
+  const handleEditClick = (budget: Budget) => {
+    setEditingId(budget.id);
+    setEditData({
+      title: budget.title,
+      budget: budget.budget.toString(),
+      spent: budget.spent.toString(),
+    });
+  };
+
   const handleUpdate = async (id: number) => {
-    try {
-      const token = localStorage.getItem('token'); // ✅ Ensure token is sent
-      if (!token) throw new Error('Unauthorized request');
-
-      const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // ✅ Send token in header
-        },
-        body: JSON.stringify({ spent: newSpent }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update budget');
-
-      setBudgets((prevBudgets) =>
-        prevBudgets.map((budget) =>
-          budget.id === id
-            ? {
-                ...budget,
-                spent: newSpent,
-                remaining: budget.budget - newSpent,
-              }
-            : budget
-        )
-      );
-      setEditingId(null);
-      toast.success('Budget updated successfully!');
-    } catch (err) {
-      console.error('Error updating budget:', err);
-      toast.error('Error updating budget. Please try again.');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Unauthorized request');
+      return;
     }
+
+    const requestBody = {
+      title: editData.title,
+      budget: parseFloat(editData.budget.replace(/^0+(?!$)/, '')) || 0,
+      spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0,
+    };
+
+    console.log('Sending update request with:', requestBody);
+
+    const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const responseData = await response.json();
+    console.log('Server response:', responseData);
+
+    if (!response.ok) {
+      toast.error(
+        `Failed to update budget: ${JSON.stringify(responseData.errors)}`
+      );
+      return;
+    }
+
+    setBudgets((prevBudgets) =>
+      prevBudgets.map((budget) =>
+        budget.id === id
+          ? {
+              ...budget,
+              title: requestBody.title,
+              budget: requestBody.budget,
+              spent: requestBody.spent,
+              remaining: requestBody.budget - requestBody.spent,
+            }
+          : budget
+      )
+    );
+
+    setEditingId(null);
+    toast.success('Budget updated successfully!');
   };
 
   if (loading)
@@ -180,52 +194,95 @@ function BudgetsPage() {
             key={budget.id}
             className="border rounded-lg p-4 shadow-sm hover:shadow-md transition"
           >
-            <h2 className="text-xl font-semibold text-purple-700">
-              {budget.title}
-            </h2>
-            <p className="text-gray-600">
-              Budget: ${Number(budget.budget).toFixed(2)}
-            </p>
-            <p className="text-gray-600">
-              Spent: ${Number(budget.spent).toFixed(2)}
-            </p>
-            <p className="text-gray-600">
-              Remaining: ${Number(budget.remaining).toFixed(2)}
-            </p>
-
             {editingId === budget.id ? (
-              <div className="mt-2">
+              <div className="space-y-2">
+                <label className="block text-gray-700 font-semibold">
+                  Budget Name:
+                </label>
                 <input
-                  type="number"
-                  value={newSpent}
-                  onChange={(e) => setNewSpent(Number(e.target.value))}
-                  className="p-2 border rounded w-1/2"
+                  type="text"
+                  value={editData.title}
+                  onChange={(e) =>
+                    setEditData({ ...editData, title: e.target.value })
+                  }
+                  className="p-2 border rounded w-full"
                 />
-                <button
-                  onClick={() => handleUpdate(budget.id)}
-                  className="ml-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700"
-                >
-                  Save
-                </button>
+
+                <label className="block text-gray-700 font-semibold">
+                  Total Budget Amount:
+                </label>
+                <input
+                  type="text"
+                  value={editData.budget}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      budget: e.target.value.replace(/^0+(?!$)/, ''),
+                    })
+                  }
+                  className="p-2 border rounded w-full"
+                />
+
+                <label className="block text-gray-700 font-semibold">
+                  Amount Spent:
+                </label>
+                <input
+                  type="text"
+                  value={editData.spent}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      spent: e.target.value.replace(/^0+(?!$)/, ''),
+                    })
+                  }
+                  className="p-2 border rounded w-full"
+                />
+
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => handleUpdate(budget.id)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingId(null)}
+                    className="px-4 py-2 bg-gray-400 text-white rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
-              <button
-                onClick={() => {
-                  setEditingId(budget.id);
-                  setNewSpent(budget.spent);
-                }}
-                className="mt-2 px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-700"
-              >
-                Edit Spent
-              </button>
+              <div>
+                <h2 className="text-xl font-semibold text-purple-700">
+                  {budget.title}
+                </h2>
+                <p className="text-gray-600">
+                  Budget: ${Number(budget.budget).toFixed(2)}
+                </p>
+                <p className="text-gray-600">
+                  Spent: ${Number(budget.spent).toFixed(2)}
+                </p>
+                <p className="text-gray-600">
+                  Remaining: ${Number(budget.remaining).toFixed(2)}
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => handleEditClick(budget)}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(budget.id)}
+                    className="px-4 py-2 bg-red-500 text-white rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             )}
-
-            <button
-              onClick={() => handleDelete(budget.id)}
-              className="ml-2 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-700"
-            >
-              Delete
-            </button>
           </li>
         ))}
       </ul>

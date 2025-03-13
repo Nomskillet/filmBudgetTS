@@ -46,8 +46,8 @@ exports.getBudgetItems =
     void 0;
 const budgetService_1 = require('../services/budgetService');
 const catchAsync_1 = __importDefault(require('../middlewares/catchAsync'));
-// Get budgets for the logged-in user
-exports.getBudgets = (0, catchAsync_1.default)((req, res) =>
+// ✅ Get budgets for the logged-in user
+exports.getBudgets = (0, catchAsync_1.default)((req, res, next) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -59,8 +59,8 @@ exports.getBudgets = (0, catchAsync_1.default)((req, res) =>
     res.json(budgets);
   })
 );
-// Add budgets & link them to the logged-in user
-exports.addBudgets = (0, catchAsync_1.default)((req, res) =>
+// ✅ Add budgets & link them to the logged-in user
+exports.addBudgets = (0, catchAsync_1.default)((req, res, next) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -77,19 +77,21 @@ exports.addBudgets = (0, catchAsync_1.default)((req, res) =>
     res.status(201).json({ message: 'Budgets added successfully' });
   })
 );
-// Update a budget only if it belongs to the user
-exports.updateBudget = (0, catchAsync_1.default)((req, res) =>
+// ✅ Update a budget only if it belongs to the user
+exports.updateBudget = (0, catchAsync_1.default)((req, res, next) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const { id } = req.params;
-    const { spent } = req.body;
+    const { title, budget, spent } = req.body;
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    const updatedBudget = yield (0, budgetService_1.updateBudgetSpent)(
+    const updatedBudget = yield (0, budgetService_1.updateBudgetInDB)(
       Number(id),
+      title,
+      budget,
       spent,
       userId
     );
@@ -102,8 +104,8 @@ exports.updateBudget = (0, catchAsync_1.default)((req, res) =>
     res.json([updatedBudget]);
   })
 );
-// Delete a budget only if it belongs to the user
-exports.deleteBudget = (0, catchAsync_1.default)((req, res) =>
+// ✅ Delete a budget only if it belongs to the user
+exports.deleteBudget = (0, catchAsync_1.default)((req, res, next) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
@@ -125,12 +127,17 @@ exports.deleteBudget = (0, catchAsync_1.default)((req, res) =>
     res.status(204).send();
   })
 );
-// Get budget items only for a budget that belongs to the user
+// ✅ Get budget items only for a budget that belongs to the user
 exports.getBudgetItems = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
-    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-    const budgetId = parseInt(req.params.budgetId, 10);
+    var _a, _b;
+    console.log(
+      'User ID from Token:',
+      (_a = req.user) === null || _a === void 0 ? void 0 : _a.id
+    );
+    const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id; // Get user ID from request
+    const budgetId = parseInt(req.params.budgetId, 10); // Get budget ID from URL
+    console.log('Fetching items for:', { budgetId, userId }); // ✅ Debugging log
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -143,6 +150,7 @@ exports.getBudgetItems = (0, catchAsync_1.default)((req, res) =>
       budgetId,
       userId
     );
+    console.log('Query result:', items); // ✅ Debugging log
     res.json(items);
   })
 );

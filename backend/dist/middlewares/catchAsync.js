@@ -1,8 +1,7 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-const catchAsync = (fn) => {
-  return (req, res, next) => {
-    fn(req, res, next).catch(next);
-  };
+// ✅ Ensure the return type is correct
+const catchAsync = (fn) => (req, res, next) => {
+  fn(req, res, next).catch(next);
 };
 exports.default = catchAsync;

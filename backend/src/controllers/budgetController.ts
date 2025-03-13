@@ -1,96 +1,110 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import {
   addBudgetsToDB,
   getBudgetsFromDB,
-  updateBudgetSpent,
+  updateBudgetInDB,
   deleteBudgetFromDB,
   getBudgetItemsFromDB,
 } from '../services/budgetService';
 import catchAsync from '../middlewares/catchAsync';
 
-// Get budgets for the logged-in user
-export const getBudgets = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
+// ✅ Get budgets for the logged-in user
+export const getBudgets = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  if (!userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
+    const budgets = await getBudgetsFromDB(userId);
+    res.json(budgets);
   }
+);
 
-  const budgets = await getBudgetsFromDB(userId);
-  res.json(budgets);
-});
+// ✅ Add budgets & link them to the logged-in user
+export const addBudgets = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-// Add budgets & link them to the logged-in user
-export const addBudgets = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
+    const budgets = req.body.budgets;
+    if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
+      res.status(400).json({ error: 'Invalid or missing budgets array' });
+      return;
+    }
 
-  if (!userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
+    await addBudgetsToDB(budgets, userId);
+    res.status(201).json({ message: 'Budgets added successfully' });
   }
+);
 
-  const budgets = req.body.budgets;
+// ✅ Update a budget only if it belongs to the user
+export const updateBudget = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userId = req.user?.id;
+    const { id } = req.params;
+    const { title, budget, spent } = req.body;
 
-  if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
-    res.status(400).json({ error: 'Invalid or missing budgets array' });
-    return;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const updatedBudget = await updateBudgetInDB(
+      Number(id),
+      title,
+      budget,
+      spent,
+      userId
+    );
+
+    if (!updatedBudget) {
+      res.status(403).json({
+        error: 'Forbidden: Budget not found or does not belong to you',
+      });
+      return;
+    }
+
+    res.json([updatedBudget]);
   }
+);
 
-  await addBudgetsToDB(budgets, userId);
-  res.status(201).json({ message: 'Budgets added successfully' });
-});
+// ✅ Delete a budget only if it belongs to the user
+export const deleteBudget = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userId = req.user?.id;
+    const { id } = req.params;
 
-// Update a budget only if it belongs to the user
-export const updateBudget = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const { id } = req.params;
-  const { spent } = req.body;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
 
-  if (!userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
+    const deletedBudget = await deleteBudgetFromDB(Number(id), userId);
+    if (!deletedBudget) {
+      res.status(403).json({
+        error: 'Forbidden: Budget not found or does not belong to you',
+      });
+      return;
+    }
+
+    res.status(204).send();
   }
+);
 
-  const updatedBudget = await updateBudgetSpent(Number(id), spent, userId);
-
-  if (!updatedBudget) {
-    res
-      .status(403)
-      .json({ error: 'Forbidden: Budget not found or does not belong to you' });
-    return;
-  }
-
-  res.json([updatedBudget]);
-});
-
-// Delete a budget only if it belongs to the user
-export const deleteBudget = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
-  const { id } = req.params;
-
-  if (!userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-
-  const deletedBudget = await deleteBudgetFromDB(Number(id), userId);
-
-  if (!deletedBudget) {
-    res
-      .status(403)
-      .json({ error: 'Forbidden: Budget not found or does not belong to you' });
-    return;
-  }
-
-  res.status(204).send();
-});
-
-// Get budget items only for a budget that belongs to the user
+// ✅ Get budget items only for a budget that belongs to the user
 export const getBudgetItems = catchAsync(
   async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    const budgetId = parseInt(req.params.budgetId, 10);
+    console.log('User ID from Token:', req.user?.id);
+
+    const userId = req.user?.id; // Get user ID from request
+    const budgetId = parseInt(req.params.budgetId, 10); // Get budget ID from URL
+
+    console.log('Fetching items for:', { budgetId, userId }); // ✅ Debugging log
 
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -103,6 +117,9 @@ export const getBudgetItems = catchAsync(
     }
 
     const items = await getBudgetItemsFromDB(budgetId, userId);
+
+    console.log('Query result:', items); // ✅ Debugging log
+
     res.json(items);
   }
 );
