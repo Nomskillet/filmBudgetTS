@@ -99,12 +99,8 @@ export const deleteBudget = catchAsync(
 // ✅ Get budget items only for a budget that belongs to the user
 export const getBudgetItems = catchAsync(
   async (req: Request, res: Response) => {
-    console.log('User ID from Token:', req.user?.id);
-
     const userId = req.user?.id; // Get user ID from request
     const budgetId = parseInt(req.params.budgetId, 10); // Get budget ID from URL
-
-    console.log('Fetching items for:', { budgetId, userId }); // ✅ Debugging log
 
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -117,8 +113,6 @@ export const getBudgetItems = catchAsync(
     }
 
     const items = await getBudgetItemsFromDB(budgetId, userId);
-
-    console.log('Query result:', items); // ✅ Debugging log
 
     res.json(items);
   }

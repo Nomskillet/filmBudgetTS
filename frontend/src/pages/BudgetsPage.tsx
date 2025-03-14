@@ -26,6 +26,16 @@ function BudgetsPage() {
   });
   const [search, setSearch] = useState<string>('');
 
+  const [expenses, setExpenses] = useState<{
+    [key: number]: {
+      id: number;
+      description: string;
+      amount: string;
+      created_at: string;
+    }[];
+  }>({});
+  const [activeBudget, setActiveBudget] = useState<number | null>(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,6 +85,37 @@ function BudgetsPage() {
       )
     );
   }, [search, budgets]);
+
+  const handleViewExpenses = async (budgetId: number) => {
+    if (activeBudget === budgetId) {
+      setActiveBudget(null); // Close expenses if already open
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Unauthorized request');
+      return;
+    }
+
+    const res = await fetch(
+      `http://localhost:5001/api/budget/${budgetId}/expenses`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!res.ok) {
+      toast.error('Failed to load expenses.');
+      return;
+    }
+
+    const data = await res.json();
+    console.log('Expenses for budget:', budgetId, data);
+
+    setExpenses((prev) => ({ ...prev, [budgetId]: data }));
+    setActiveBudget(budgetId); // Open expenses for this budget
+  };
 
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem('token');
@@ -259,27 +300,61 @@ function BudgetsPage() {
                   {budget.title}
                 </h2>
                 <p className="text-gray-600">
-                  Budget: ${Number(budget.budget).toFixed(2)}
+                  Budget: $
+                  {!isNaN(Number(budget.budget))
+                    ? Number(budget.budget).toFixed(2)
+                    : '0.00'}
                 </p>
                 <p className="text-gray-600">
-                  Spent: ${Number(budget.spent).toFixed(2)}
+                  Spent: $
+                  {!isNaN(Number(budget.spent))
+                    ? Number(budget.spent).toFixed(2)
+                    : '0.00'}
                 </p>
                 <p className="text-gray-600">
-                  Remaining: ${Number(budget.remaining).toFixed(2)}
+                  Remaining: $
+                  {!isNaN(Number(budget.remaining))
+                    ? Number(budget.remaining).toFixed(2)
+                    : '0.00'}
                 </p>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => handleEditClick(budget)}
-                    className="px-4 py-2 bg-yellow-500 text-white rounded"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(budget.id)}
-                    className="px-4 py-2 bg-red-500 text-white rounded"
-                  >
-                    Delete
-                  </button>
+
+                <div className="mt-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditClick(budget)}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(budget.id)}
+                      className="px-4 py-2 bg-red-500 text-white rounded"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => handleViewExpenses(budget.id)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded"
+                    >
+                      View Expenses
+                    </button>
+                  </div>
+
+                  {/* ✅ Move expenses BELOW the buttons */}
+                  {activeBudget === budget.id && expenses[budget.id] && (
+                    <ul className="mt-4 p-3 border rounded bg-gray-100">
+                      {expenses[budget.id].length > 0 ? (
+                        expenses[budget.id].map((expense) => (
+                          <li key={expense.id} className="text-gray-700">
+                            {expense.description}: $
+                            {Number(expense.amount).toFixed(2)}
+                          </li>
+                        ))
+                      ) : (
+                        <p className="text-gray-500">No expenses yet.</p>
+                      )}
+                    </ul>
+                  )}
                 </div>
               </div>
             )}

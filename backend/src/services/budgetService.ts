@@ -79,8 +79,6 @@ export const deleteBudgetFromDB = (id: number, userId: number) =>
 
 // ✅ FIXED: Fetch expenses (NOT budget_items)
 export const getBudgetItemsFromDB = (budgetId: number, userId: number) => {
-  console.log('Fetching items for:', { budgetId, userId });
-
   return pool
     .query(
       `SELECT id, budget_id, description, amount, created_at 
@@ -91,7 +89,6 @@ export const getBudgetItemsFromDB = (budgetId: number, userId: number) => {
       [budgetId, userId]
     )
     .then((result) => {
-      console.log('Query result:', result.rows);
       return result.rows;
     });
 };

@@ -130,14 +130,9 @@ exports.deleteBudget = (0, catchAsync_1.default)((req, res, next) =>
 // ✅ Get budget items only for a budget that belongs to the user
 exports.getBudgetItems = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
-    console.log(
-      'User ID from Token:',
-      (_a = req.user) === null || _a === void 0 ? void 0 : _a.id
-    );
-    const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.id; // Get user ID from request
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id; // Get user ID from request
     const budgetId = parseInt(req.params.budgetId, 10); // Get budget ID from URL
-    console.log('Fetching items for:', { budgetId, userId }); // ✅ Debugging log
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -150,7 +145,6 @@ exports.getBudgetItems = (0, catchAsync_1.default)((req, res) =>
       budgetId,
       userId
     );
-    console.log('Query result:', items); // ✅ Debugging log
     res.json(items);
   })
 );
