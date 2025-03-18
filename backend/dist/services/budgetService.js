@@ -38,7 +38,8 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.getExpensesFromDB =
+exports.updateExpenseInDB =
+  exports.getExpensesFromDB =
   exports.addExpenseToDB =
   exports.getBudgetItemsFromDB =
   exports.deleteBudgetFromDB =
@@ -47,7 +48,7 @@ exports.getExpensesFromDB =
   exports.getBudgetsFromDB =
     void 0;
 const db_1 = __importDefault(require('../db'));
-// ✅ Fetch budgets for a specific user
+// Fetch budgets for a specific user
 const getBudgetsFromDB = (userId) =>
   db_1.default
     .query(
@@ -59,7 +60,7 @@ const getBudgetsFromDB = (userId) =>
     )
     .then((result) => result.rows);
 exports.getBudgetsFromDB = getBudgetsFromDB;
-// ✅ Add multiple budgets for a specific user
+// Add multiple budgets for a specific user
 const addBudgetsToDB = (budgets, userId) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const client = yield db_1.default.connect();
@@ -80,7 +81,7 @@ const addBudgetsToDB = (budgets, userId) =>
     }
   });
 exports.addBudgetsToDB = addBudgetsToDB;
-// ✅ Update budget (title, budget, spent) for a user
+// Update budget (title, budget, spent) for a user
 const updateBudgetInDB = (id, title, budget, spent, userId) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const result = yield db_1.default.query(
@@ -93,7 +94,7 @@ const updateBudgetInDB = (id, title, budget, spent, userId) =>
     return result.rows[0];
   });
 exports.updateBudgetInDB = updateBudgetInDB;
-// ✅ Delete a budget only if it belongs to the user
+// Delete a budget only if it belongs to the user
 const deleteBudgetFromDB = (id, userId) =>
   db_1.default
     .query(
@@ -105,8 +106,8 @@ const deleteBudgetFromDB = (id, userId) =>
     .then((result) => result.rows[0]);
 exports.deleteBudgetFromDB = deleteBudgetFromDB;
 // ✅ FIXED: Fetch expenses (NOT budget_items)
-const getBudgetItemsFromDB = (budgetId, userId) => {
-  return db_1.default
+const getBudgetItemsFromDB = (budgetId, userId) =>
+  db_1.default
     .query(
       `SELECT id, budget_id, description, amount, created_at 
        FROM expenses 
@@ -118,9 +119,8 @@ const getBudgetItemsFromDB = (budgetId, userId) => {
     .then((result) => {
       return result.rows;
     });
-};
 exports.getBudgetItemsFromDB = getBudgetItemsFromDB;
-// ✅ Add an expense to the database
+// Add an expense to the database
 const addExpenseToDB = (budgetId, description, amount) =>
   db_1.default.query(
     `INSERT INTO expenses (budget_id, description, amount) 
@@ -128,7 +128,7 @@ const addExpenseToDB = (budgetId, description, amount) =>
     [budgetId, description, amount]
   );
 exports.addExpenseToDB = addExpenseToDB;
-// ✅ Get all expenses for a budget
+// Get all expenses for a budget
 const getExpensesFromDB = (budgetId) =>
   db_1.default
     .query(
@@ -140,3 +140,13 @@ const getExpensesFromDB = (budgetId) =>
     )
     .then((result) => result.rows);
 exports.getExpensesFromDB = getExpensesFromDB;
+// Update an expense in the database
+const updateExpenseInDB = (expenseId, description, amount) =>
+  __awaiter(void 0, void 0, void 0, function* () {
+    const result = yield db_1.default.query(
+      'UPDATE expenses SET description = $1, amount = $2 WHERE id = $3 RETURNING *',
+      [description, amount, expenseId]
+    );
+    return result.rows[0];
+  });
+exports.updateExpenseInDB = updateExpenseInDB;

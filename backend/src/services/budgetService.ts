@@ -9,7 +9,7 @@ export interface Budget {
   created_at: Date;
 }
 
-// ✅ Fetch budgets for a specific user
+// Fetch budgets for a specific user
 export const getBudgetsFromDB = (userId: number) =>
   pool
     .query<Budget>(
@@ -21,7 +21,7 @@ export const getBudgetsFromDB = (userId: number) =>
     )
     .then((result) => result.rows);
 
-// ✅ Add multiple budgets for a specific user
+// Add multiple budgets for a specific user
 export const addBudgetsToDB = async (
   budgets: { title: string; budget: number }[],
   userId: number
@@ -47,7 +47,7 @@ export const addBudgetsToDB = async (
   }
 };
 
-// ✅ Update budget (title, budget, spent) for a user
+// Update budget (title, budget, spent) for a user
 export const updateBudgetInDB = async (
   id: number,
   title: string,
@@ -66,7 +66,7 @@ export const updateBudgetInDB = async (
   return result.rows[0];
 };
 
-// ✅ Delete a budget only if it belongs to the user
+// Delete a budget only if it belongs to the user
 export const deleteBudgetFromDB = (id: number, userId: number) =>
   pool
     .query<Budget>(
@@ -78,8 +78,8 @@ export const deleteBudgetFromDB = (id: number, userId: number) =>
     .then((result) => result.rows[0]);
 
 // ✅ FIXED: Fetch expenses (NOT budget_items)
-export const getBudgetItemsFromDB = (budgetId: number, userId: number) => {
-  return pool
+export const getBudgetItemsFromDB = (budgetId: number, userId: number) =>
+  pool
     .query(
       `SELECT id, budget_id, description, amount, created_at 
        FROM expenses 
@@ -91,9 +91,8 @@ export const getBudgetItemsFromDB = (budgetId: number, userId: number) => {
     .then((result) => {
       return result.rows;
     });
-};
 
-// ✅ Add an expense to the database
+// Add an expense to the database
 export const addExpenseToDB = (
   budgetId: number,
   description: string,
@@ -105,7 +104,7 @@ export const addExpenseToDB = (
     [budgetId, description, amount]
   );
 
-// ✅ Get all expenses for a budget
+// Get all expenses for a budget
 export const getExpensesFromDB = (budgetId: number) =>
   pool
     .query(
@@ -116,3 +115,17 @@ export const getExpensesFromDB = (budgetId: number) =>
       [budgetId]
     )
     .then((result) => result.rows);
+
+// Update an expense in the database
+export const updateExpenseInDB = async (
+  expenseId: number,
+  description: string,
+  amount: number
+) => {
+  const result = await pool.query(
+    'UPDATE expenses SET description = $1, amount = $2 WHERE id = $3 RETURNING *',
+    [description, amount, expenseId]
+  );
+
+  return result.rows[0];
+};

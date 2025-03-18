@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { z } from 'zod'; // ✅ Import Zod
-import { useForm, useFieldArray } from 'react-hook-form'; // ✅ Import React Hook Form and Field Array
-import { zodResolver } from '@hookform/resolvers/zod'; // ✅ Import resolver
-import { useNavigate } from 'react-router-dom'; // ✅ Import navigation
+import { z } from 'zod'; // Import Zod
+import { useForm, useFieldArray } from 'react-hook-form'; // Import React Hook Form and Field Array
+import { zodResolver } from '@hookform/resolvers/zod'; // Import resolver
+import { useNavigate } from 'react-router-dom'; // Import navigation
 
 // ✅ Define the validation schema using Zod for multiple budgets
 const budgetSchema = z.object({
@@ -16,11 +16,11 @@ const budgetSchema = z.object({
   ),
 });
 
-type BudgetFormInputs = z.infer<typeof budgetSchema>; // ✅ Infer TypeScript types from Zod schema
+type BudgetFormInputs = z.infer<typeof budgetSchema>; // Infer TypeScript types from Zod schema
 
 function BudgetForm() {
-  const navigate = useNavigate(); // ✅ React Router navigation
-  const token = localStorage.getItem('token'); // ✅ Retrieve token
+  const navigate = useNavigate(); // React Router navigation
+  const token = localStorage.getItem('token'); // Retrieve token
 
   const {
     register,

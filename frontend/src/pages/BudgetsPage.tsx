@@ -34,47 +34,79 @@ function BudgetsPage() {
       created_at: string;
     }[];
   }>({});
+
+  const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
+  const [editExpenseData, setEditExpenseData] = useState({
+    description: '',
+    amount: '',
+  });
+
   const [activeBudget, setActiveBudget] = useState<number | null>(null);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState<number | null>(
+    null
+  );
+
+  const [newExpense, setNewExpense] = useState({
+    description: '',
+    amount: '',
+  });
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchBudgets = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No authentication token found. Please log in.');
-        setLoading(false);
-        return;
-      }
+  const fetchExpenses = async (budgetId: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-      const res = await fetch('http://localhost:5001/api/budgets', {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const res = await fetch(`http://localhost:5001/api/expenses/${budgetId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (!res.ok) {
-        setLoading(false);
-        setError(
-          res.status === 401
-            ? 'Unauthorized: Please log in again.'
-            : 'Failed to fetch budgets'
-        );
-        return;
-      }
+    if (!res.ok) return;
 
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setBudgets(data);
-        setFilteredBudgets(data);
-      } else {
-        setError('Invalid data format received from server.');
-      }
+    const data = await res.json();
+    setExpenses((prev) => ({ ...prev, [budgetId]: data }));
+  };
 
+  const fetchBudgets = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('No authentication token found. Please log in.');
       setLoading(false);
-    };
+      return;
+    }
 
+    const res = await fetch('http://localhost:5001/api/budgets', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      setLoading(false);
+      setError(
+        res.status === 401
+          ? 'Unauthorized: Please log in again.'
+          : 'Failed to fetch budgets'
+      );
+      return;
+    }
+
+    const data = await res.json();
+    if (Array.isArray(data)) {
+      setBudgets(data);
+      setFilteredBudgets(data);
+
+      // Fetch expenses for each budget
+      data.forEach((budget) => fetchExpenses(budget.id));
+    } else {
+      setError('Invalid data format received from server.');
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchBudgets();
   }, [navigate]);
 
@@ -98,12 +130,10 @@ function BudgetsPage() {
       return;
     }
 
-    const res = await fetch(
-      `http://localhost:5001/api/budget/${budgetId}/expenses`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    // Make sure the API route matches your backend
+    const res = await fetch(`http://localhost:5001/api/expenses/${budgetId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     if (!res.ok) {
       toast.error('Failed to load expenses.');
@@ -115,6 +145,102 @@ function BudgetsPage() {
 
     setExpenses((prev) => ({ ...prev, [budgetId]: data }));
     setActiveBudget(budgetId); // Open expenses for this budget
+  };
+
+  const handleAddExpense = async () => {
+    if (!showAddExpenseModal) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Unauthorized request');
+      return;
+    }
+
+    const response = await fetch(
+      `http://localhost:5001/api/budget/${showAddExpenseModal}/expense`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description: newExpense.description,
+          amount: parseFloat(newExpense.amount),
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      toast.error('Failed to add expense.');
+      return;
+    }
+
+    toast.success('Expense added successfully!');
+
+    // ✅ Clear the input fields
+    setNewExpense({ description: '', amount: '' });
+
+    // ✅ Close the modal
+    setShowAddExpenseModal(null);
+
+    // ✅ Refresh budgets (spent + remaining)
+    fetchBudgets(); // Make sure fetchBudgets fetches updated spent & remaining
+  };
+
+  const handleEditExpenseClick = (expense: {
+    id: number;
+    description: string;
+    amount: string;
+  }) => {
+    setEditingExpenseId(expense.id);
+    setEditExpenseData({
+      description: expense.description,
+      amount: expense.amount.toString(),
+    });
+  };
+
+  const handleUpdateExpense = async () => {
+    if (!editingExpenseId) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Unauthorized request');
+      return;
+    }
+
+    const response = await fetch(
+      `http://localhost:5001/api/expense/${editingExpenseId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          description: editExpenseData.description,
+          amount: parseFloat(editExpenseData.amount),
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      toast.error('Failed to update expense');
+      return;
+    }
+
+    const updatedExpense = await response.json();
+
+    // ✅ Update the local state
+    setExpenses((prevExpenses) => ({
+      ...prevExpenses,
+      [activeBudget!]: prevExpenses[activeBudget!].map((expense) =>
+        expense.id === updatedExpense.id ? updatedExpense : expense
+      ),
+    }));
+
+    setEditingExpenseId(null);
+    toast.success('Expense updated successfully!');
   };
 
   const handleDelete = async (id: number) => {
@@ -138,14 +264,14 @@ function BudgetsPage() {
     toast.success('Budget deleted successfully!');
   };
 
-  const handleEditClick = (budget: Budget) => {
-    setEditingId(budget.id);
-    setEditData({
-      title: budget.title,
-      budget: budget.budget.toString(),
-      spent: budget.spent.toString(),
-    });
-  };
+  // const handleEditClick = (budget: Budget) => {
+  //   setEditingId(budget.id);
+  //   setEditData({
+  //     title: budget.title,
+  //     budget: budget.budget.toString(),
+  //     spent: budget.spent.toString(),
+  //   });
+  // };
 
   const handleUpdate = async (id: number) => {
     const token = localStorage.getItem('token');
@@ -229,6 +355,52 @@ function BudgetsPage() {
         className="mb-4 p-2 border rounded w-full"
       />
 
+      {showAddExpenseModal !== null && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-bold mb-4">Add Expense</h2>
+
+            {/* Expense Description */}
+            <input
+              type="text"
+              placeholder="Expense Description"
+              className="border p-2 w-full mb-2 rounded"
+              value={newExpense.description}
+              onChange={(e) =>
+                setNewExpense({ ...newExpense, description: e.target.value })
+              }
+            />
+
+            {/* Expense Amount */}
+            <input
+              type="number"
+              placeholder="Amount"
+              className="border p-2 w-full mb-2 rounded"
+              value={newExpense.amount}
+              onChange={(e) =>
+                setNewExpense({ ...newExpense, amount: e.target.value })
+              }
+            />
+
+            {/* Buttons */}
+            <div className="flex justify-end space-x-2 mt-4">
+              <button
+                className="px-4 py-2 bg-gray-400 text-white rounded"
+                onClick={() => setShowAddExpenseModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddExpense}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Add Expense
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ul className="space-y-4">
         {filteredBudgets.map((budget) => (
           <li
@@ -303,51 +475,114 @@ function BudgetsPage() {
                   Budget: $
                   {!isNaN(Number(budget.budget))
                     ? Number(budget.budget).toFixed(2)
-                    : '0.00'}
+                    : 0}
                 </p>
                 <p className="text-gray-600">
                   Spent: $
-                  {!isNaN(Number(budget.spent))
-                    ? Number(budget.spent).toFixed(2)
+                  {expenses[budget.id]
+                    ? expenses[budget.id]
+                        .reduce(
+                          (sum, expense) => sum + Number(expense.amount),
+                          0
+                        )
+                        .toFixed(2)
                     : '0.00'}
                 </p>
+
                 <p className="text-gray-600">
                   Remaining: $
                   {!isNaN(Number(budget.remaining))
                     ? Number(budget.remaining).toFixed(2)
-                    : '0.00'}
+                    : 0}
                 </p>
 
                 <div className="mt-2">
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEditClick(budget)}
-                      className="px-4 py-2 bg-yellow-500 text-white rounded"
-                    >
-                      Edit
-                    </button>
                     <button
                       onClick={() => handleDelete(budget.id)}
                       className="px-4 py-2 bg-red-500 text-white rounded"
                     >
                       Delete
                     </button>
+
                     <button
                       onClick={() => handleViewExpenses(budget.id)}
                       className="px-4 py-2 bg-blue-500 text-white rounded"
                     >
                       View Expenses
                     </button>
+                    <button
+                      onClick={() => setShowAddExpenseModal(budget.id)}
+                      className="ml-2 px-4 py-2 bg-green-500 text-white rounded"
+                    >
+                      + Add Expense
+                    </button>
                   </div>
 
-                  {/* ✅ Move expenses BELOW the buttons */}
+                  {/* Move expenses BELOW the buttons */}
                   {activeBudget === budget.id && expenses[budget.id] && (
                     <ul className="mt-4 p-3 border rounded bg-gray-100">
                       {expenses[budget.id].length > 0 ? (
                         expenses[budget.id].map((expense) => (
-                          <li key={expense.id} className="text-gray-700">
-                            {expense.description}: $
-                            {Number(expense.amount).toFixed(2)}
+                          <li
+                            key={expense.id}
+                            className="text-gray-700 flex justify-between items-center"
+                          >
+                            {editingExpenseId === expense.id ? (
+                              // ✅ Expense Edit Form
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={editExpenseData.description}
+                                  onChange={(e) =>
+                                    setEditExpenseData({
+                                      ...editExpenseData,
+                                      description: e.target.value,
+                                    })
+                                  }
+                                  className="border p-1"
+                                />
+                                <input
+                                  type="number"
+                                  value={editExpenseData.amount}
+                                  onChange={(e) =>
+                                    setEditExpenseData({
+                                      ...editExpenseData,
+                                      amount: e.target.value,
+                                    })
+                                  }
+                                  className="border p-1"
+                                />
+                                <button
+                                  onClick={handleUpdateExpense}
+                                  className="bg-green-500 text-white px-2 py-1 rounded"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => setEditingExpenseId(null)}
+                                  className="bg-gray-400 text-white px-2 py-1 rounded"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              // ✅ Normal Expense Display
+                              <>
+                                <span>
+                                  {expense.description}: $
+                                  {Number(expense.amount).toFixed(2)}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    handleEditExpenseClick(expense)
+                                  }
+                                  className="ml-2 text-blue-500"
+                                >
+                                  Edit
+                                </button>
+                              </>
+                            )}
                           </li>
                         ))
                       ) : (
