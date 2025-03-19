@@ -21,8 +21,8 @@ function BudgetsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({
     title: '',
-    budget: '',
-    spent: '',
+    budget: '0', // Start as a string, convert to number later
+    spent: '0', // Ensure spent is included and starts as a string
   });
   const [search, setSearch] = useState<string>('');
 
@@ -231,14 +231,43 @@ function BudgetsPage() {
 
     const updatedExpense = await response.json();
 
-    // ✅ Update the local state
-    setExpenses((prevExpenses) => ({
-      ...prevExpenses,
-      [activeBudget!]: prevExpenses[activeBudget!].map((expense) =>
+    // ✅ Update the expenses in state
+    setExpenses((prevExpenses) => {
+      const updatedExpenses = prevExpenses[activeBudget!].map((expense) =>
         expense.id === updatedExpense.id ? updatedExpense : expense
-      ),
-    }));
+      );
 
+      return {
+        ...prevExpenses,
+        [activeBudget!]: updatedExpenses,
+      };
+    });
+
+    // ✅ Recalculate the new spent amount
+    const prevExpense = expenses[activeBudget!].find(
+      (expense) => expense.id === updatedExpense.id
+    );
+    const prevAmount = prevExpense ? parseFloat(prevExpense.amount) : 0;
+    const updatedSpent =
+      budgets.find((b) => b.id === activeBudget)!.spent -
+      prevAmount +
+      parseFloat(editExpenseData.amount);
+
+    // ✅ Update the budget's spent & remaining values
+    setBudgets((prevBudgets) =>
+      prevBudgets.map((budget) => {
+        if (budget.id === activeBudget) {
+          return {
+            ...budget,
+            spent: updatedSpent,
+            remaining: budget.budget - updatedSpent,
+          };
+        }
+        return budget;
+      })
+    );
+
+    // ✅ Reset edit mode
     setEditingExpenseId(null);
     toast.success('Expense updated successfully!');
   };
@@ -269,9 +298,45 @@ function BudgetsPage() {
   //   setEditData({
   //     title: budget.title,
   //     budget: budget.budget.toString(),
-  //     spent: budget.spent.toString(),
+  //     spent: budget.spent?.toString() || "0",
   //   });
   // };
+
+  const handleDeleteExpense = async (expenseId: number, budgetId: number) => {
+    console.log(`Deleting expense: ${expenseId} from budget: ${budgetId}`);
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Unauthorized request');
+      return;
+    }
+
+    const response = await fetch(
+      `http://localhost:5001/api/expense/${expenseId}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (!response.ok) {
+      const errorMsg = await response.text();
+      console.error('Delete failed:', errorMsg);
+      toast.error(`Failed to delete expense: ${errorMsg}`);
+      return;
+    }
+
+    toast.success('Expense deleted successfully!');
+
+    // ✅ Remove the deleted expense from state
+    setExpenses((prevExpenses) => ({
+      ...prevExpenses,
+      [budgetId]: prevExpenses[budgetId].filter((exp) => exp.id !== expenseId),
+    }));
+
+    // ✅ Fetch updated budgets to update "spent" and "remaining"
+    fetchBudgets();
+  };
 
   const handleUpdate = async (id: number) => {
     const token = localStorage.getItem('token');
@@ -283,7 +348,7 @@ function BudgetsPage() {
     const requestBody = {
       title: editData.title,
       budget: parseFloat(editData.budget.replace(/^0+(?!$)/, '')) || 0,
-      spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0,
+      spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0, // Convert spent to a number
     };
 
     console.log('Sending update request with:', requestBody);
@@ -314,8 +379,10 @@ function BudgetsPage() {
               ...budget,
               title: requestBody.title,
               budget: requestBody.budget,
-              spent: requestBody.spent,
-              remaining: requestBody.budget - requestBody.spent,
+              spent: isNaN(Number(budget.spent)) ? 0 : Number(budget.spent),
+              remaining:
+                requestBody.budget -
+                (isNaN(Number(budget.spent)) ? 0 : Number(budget.spent)),
             }
           : budget
       )
@@ -436,21 +503,6 @@ function BudgetsPage() {
                   className="p-2 border rounded w-full"
                 />
 
-                <label className="block text-gray-700 font-semibold">
-                  Amount Spent:
-                </label>
-                <input
-                  type="text"
-                  value={editData.spent}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      spent: e.target.value.replace(/^0+(?!$)/, ''),
-                    })
-                  }
-                  className="p-2 border rounded w-full"
-                />
-
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={() => handleUpdate(budget.id)}
@@ -479,25 +531,34 @@ function BudgetsPage() {
                 </p>
                 <p className="text-gray-600">
                   Spent: $
-                  {expenses[budget.id]
-                    ? expenses[budget.id]
-                        .reduce(
-                          (sum, expense) => sum + Number(expense.amount),
-                          0
-                        )
-                        .toFixed(2)
+                  {!isNaN(Number(budget.spent))
+                    ? Number(budget.spent).toFixed(2)
                     : '0.00'}
                 </p>
 
                 <p className="text-gray-600">
                   Remaining: $
-                  {!isNaN(Number(budget.remaining))
-                    ? Number(budget.remaining).toFixed(2)
-                    : 0}
+                  {budget.budget - budget.spent >= 0
+                    ? (budget.budget - budget.spent).toFixed(2)
+                    : '0.00'}
                 </p>
 
                 <div className="mt-2">
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingId(budget.id);
+                        setEditData({
+                          title: budget.title,
+                          budget: budget.budget.toString(),
+                          spent: budget.spent?.toString() || '0', // ✅ Ensure spent is always included
+                        });
+                      }}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded"
+                    >
+                      Edit
+                    </button>
+
                     <button
                       onClick={() => handleDelete(budget.id)}
                       className="px-4 py-2 bg-red-500 text-white rounded"
@@ -529,7 +590,6 @@ function BudgetsPage() {
                             className="text-gray-700 flex justify-between items-center"
                           >
                             {editingExpenseId === expense.id ? (
-                              // ✅ Expense Edit Form
                               <div className="flex gap-2">
                                 <input
                                   type="text"
@@ -567,21 +627,30 @@ function BudgetsPage() {
                                 </button>
                               </div>
                             ) : (
-                              // ✅ Normal Expense Display
-                              <>
+                              <div className="flex items-center justify-between w-full">
                                 <span>
                                   {expense.description}: $
                                   {Number(expense.amount).toFixed(2)}
                                 </span>
-                                <button
-                                  onClick={() =>
-                                    handleEditExpenseClick(expense)
-                                  }
-                                  className="ml-2 text-blue-500"
-                                >
-                                  Edit
-                                </button>
-                              </>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() =>
+                                      handleEditExpenseClick(expense)
+                                    }
+                                    className="text-blue-500"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteExpense(expense.id, budget.id)
+                                    }
+                                    className="text-red-500"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
                             )}
                           </li>
                         ))

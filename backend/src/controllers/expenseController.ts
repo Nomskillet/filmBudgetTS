@@ -52,7 +52,6 @@ export const getExpenses = catchAsync(async (req: Request, res: Response) => {
   res.json(expenses);
 });
 
-// Update an existing expense
 export const updateExpense = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const expenseId = parseInt(req.params.expenseId, 10);
@@ -68,6 +67,20 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
+  // ✅ Get the current expense amount before updating
+  const expenseResult = await pool.query(
+    `SELECT amount, budget_id FROM expenses WHERE id = $1`,
+    [expenseId]
+  );
+
+  if (expenseResult.rows.length === 0) {
+    res.status(404).json({ error: 'Expense not found' });
+    return;
+  }
+
+  const { amount: oldAmount, budget_id } = expenseResult.rows[0];
+
+  // ✅ Update the expense
   const updatedExpense = await updateExpenseInDB(
     expenseId,
     description,
@@ -79,5 +92,52 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
+  // ✅ Adjust the "spent" column based on the difference in amounts
+  const amountDifference = amount - oldAmount;
+
+  await pool.query(`UPDATE budgets SET spent = spent + $1 WHERE id = $2`, [
+    amountDifference,
+    budget_id,
+  ]);
+
+  // ✅ Send the updated expense
   res.json(updatedExpense);
+});
+
+// ✅ Add a new delete function
+export const deleteExpense = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const expenseId = parseInt(req.params.expenseId, 10);
+
+  if (!userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  if (isNaN(expenseId)) {
+    res.status(400).json({ error: 'Invalid expense ID' });
+    return;
+  }
+
+  // ✅ Get the expense details (amount & budget_id)
+  const expenseResult = await pool.query(
+    `SELECT amount, budget_id FROM expenses WHERE id = $1`,
+    [expenseId]
+  );
+
+  if (expenseResult.rows.length === 0) {
+    res.status(404).json({ error: 'Expense not found' });
+    return;
+  }
+
+  const { amount, budget_id } = expenseResult.rows[0];
+
+  await pool.query(`DELETE FROM expenses WHERE id = $1`, [expenseId]);
+
+  await pool.query(`UPDATE budgets SET spent = spent - $1 WHERE id = $2`, [
+    amount,
+    budget_id,
+  ]);
+
+  res.json({ message: 'Expense deleted successfully' });
 });

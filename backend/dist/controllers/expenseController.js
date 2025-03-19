@@ -38,7 +38,11 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.updateExpense = exports.getExpenses = exports.addExpense = void 0;
+exports.deleteExpense =
+  exports.updateExpense =
+  exports.getExpenses =
+  exports.addExpense =
+    void 0;
 const budgetService_1 = require('../services/budgetService');
 const catchAsync_1 = __importDefault(require('../middlewares/catchAsync'));
 const db_1 = __importDefault(require('../db'));
@@ -83,7 +87,6 @@ exports.getExpenses = (0, catchAsync_1.default)((req, res) =>
     res.json(expenses);
   })
 );
-// Update an existing expense
 exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -98,6 +101,17 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
       res.status(400).json({ error: 'Invalid input data' });
       return;
     }
+    // ✅ Get the current expense amount before updating
+    const expenseResult = yield db_1.default.query(
+      `SELECT amount, budget_id FROM expenses WHERE id = $1`,
+      [expenseId]
+    );
+    if (expenseResult.rows.length === 0) {
+      res.status(404).json({ error: 'Expense not found' });
+      return;
+    }
+    const { amount: oldAmount, budget_id } = expenseResult.rows[0];
+    // ✅ Update the expense
     const updatedExpense = yield (0, budgetService_1.updateExpenseInDB)(
       expenseId,
       description,
@@ -107,6 +121,45 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
       res.status(404).json({ error: 'Expense not found' });
       return;
     }
+    // ✅ Adjust the "spent" column based on the difference in amounts
+    const amountDifference = amount - oldAmount;
+    yield db_1.default.query(
+      `UPDATE budgets SET spent = spent + $1 WHERE id = $2`,
+      [amountDifference, budget_id]
+    );
+    // ✅ Send the updated expense
     res.json(updatedExpense);
+  })
+);
+// ✅ Add a new delete function
+exports.deleteExpense = (0, catchAsync_1.default)((req, res) =>
+  __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    const expenseId = parseInt(req.params.expenseId, 10);
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    if (isNaN(expenseId)) {
+      res.status(400).json({ error: 'Invalid expense ID' });
+      return;
+    }
+    // ✅ Get the expense details (amount & budget_id)
+    const expenseResult = yield db_1.default.query(
+      `SELECT amount, budget_id FROM expenses WHERE id = $1`,
+      [expenseId]
+    );
+    if (expenseResult.rows.length === 0) {
+      res.status(404).json({ error: 'Expense not found' });
+      return;
+    }
+    const { amount, budget_id } = expenseResult.rows[0];
+    yield db_1.default.query(`DELETE FROM expenses WHERE id = $1`, [expenseId]);
+    yield db_1.default.query(
+      `UPDATE budgets SET spent = spent - $1 WHERE id = $2`,
+      [amount, budget_id]
+    );
+    res.json({ message: 'Expense deleted successfully' });
   })
 );

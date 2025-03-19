@@ -26,4 +26,9 @@ router.patch(
   authMiddleware_1.default,
   expenseController_1.updateExpense
 );
+router.delete(
+  '/expense/:expenseId',
+  authMiddleware_1.default,
+  expenseController_1.deleteExpense
+);
 exports.default = router;

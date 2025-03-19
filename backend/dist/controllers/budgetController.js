@@ -77,22 +77,30 @@ exports.addBudgets = (0, catchAsync_1.default)((req, res, next) =>
     res.status(201).json({ message: 'Budgets added successfully' });
   })
 );
-// ✅ Update a budget only if it belongs to the user
+// Update a budget only if it belongs to the user
 exports.updateBudget = (0, catchAsync_1.default)((req, res, next) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const { id } = req.params;
-    const { title, budget, spent } = req.body;
+    const { title, budget } = req.body; // No longer expecting "spent" from frontend
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    // Fetch the current spent amount from the database
+    const existingBudgets = yield (0, budgetService_1.getBudgetsFromDB)(userId);
+    const existingBudget = existingBudgets.find((b) => b.id === Number(id));
+    if (!existingBudget) {
+      res.status(404).json({ error: 'Budget not found' });
+      return;
+    }
+    // Use the existing spent value when updating
     const updatedBudget = yield (0, budgetService_1.updateBudgetInDB)(
       Number(id),
       title,
       budget,
-      spent,
+      existingBudget.spent, // Keep the current spent value
       userId
     );
     if (!updatedBudget) {
