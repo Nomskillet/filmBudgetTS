@@ -178,13 +178,13 @@ function BudgetsPage() {
 
     toast.success('Expense added successfully!');
 
-    // ✅ Clear the input fields
+    // Clear the input fields
     setNewExpense({ description: '', amount: '' });
 
-    // ✅ Close the modal
+    // Close the modal
     setShowAddExpenseModal(null);
 
-    // ✅ Refresh budgets (spent + remaining)
+    // Refresh budgets (spent + remaining)
     fetchBudgets(); // Make sure fetchBudgets fetches updated spent & remaining
   };
 
@@ -231,7 +231,7 @@ function BudgetsPage() {
 
     const updatedExpense = await response.json();
 
-    // ✅ Update the expenses in state
+    // Update the expenses in state
     setExpenses((prevExpenses) => {
       const updatedExpenses = prevExpenses[activeBudget!].map((expense) =>
         expense.id === updatedExpense.id ? updatedExpense : expense
@@ -253,7 +253,7 @@ function BudgetsPage() {
       prevAmount +
       parseFloat(editExpenseData.amount);
 
-    // ✅ Update the budget's spent & remaining values
+    // Update the budget's spent & remaining values
     setBudgets((prevBudgets) =>
       prevBudgets.map((budget) => {
         if (budget.id === activeBudget) {
@@ -267,7 +267,6 @@ function BudgetsPage() {
       })
     );
 
-    // ✅ Reset edit mode
     setEditingExpenseId(null);
     toast.success('Expense updated successfully!');
   };
@@ -328,13 +327,11 @@ function BudgetsPage() {
 
     toast.success('Expense deleted successfully!');
 
-    // ✅ Remove the deleted expense from state
     setExpenses((prevExpenses) => ({
       ...prevExpenses,
       [budgetId]: prevExpenses[budgetId].filter((exp) => exp.id !== expenseId),
     }));
 
-    // ✅ Fetch updated budgets to update "spent" and "remaining"
     fetchBudgets();
   };
 
@@ -536,11 +533,15 @@ function BudgetsPage() {
                     : '0.00'}
                 </p>
 
-                <p className="text-gray-600">
-                  Remaining: $
-                  {budget.budget - budget.spent >= 0
-                    ? (budget.budget - budget.spent).toFixed(2)
-                    : '0.00'}
+                <p
+                  className={`text-gray-600 ${
+                    budget.budget - budget.spent < 0 ? 'text-red-500' : ''
+                  }`}
+                >
+                  Remaining:{' '}
+                  {budget.budget - budget.spent < 0
+                    ? `-$${Math.abs(budget.budget - budget.spent).toFixed(2)}`
+                    : `$${(budget.budget - budget.spent).toFixed(2)}`}
                 </p>
 
                 <div className="mt-2">
@@ -551,7 +552,7 @@ function BudgetsPage() {
                         setEditData({
                           title: budget.title,
                           budget: budget.budget.toString(),
-                          spent: budget.spent?.toString() || '0', // ✅ Ensure spent is always included
+                          spent: budget.spent?.toString() || '0',
                         });
                       }}
                       className="px-4 py-2 bg-yellow-500 text-white rounded"

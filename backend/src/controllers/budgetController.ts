@@ -8,7 +8,7 @@ import {
 } from '../services/budgetService';
 import catchAsync from '../middlewares/catchAsync';
 
-// ✅ Get budgets for the logged-in user
+// Get budgets for the logged-in user
 export const getBudgets = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const userId = req.user?.id;
@@ -22,7 +22,7 @@ export const getBudgets = catchAsync(
   }
 );
 
-// ✅ Add budgets & link them to the logged-in user
+// Add budgets & link them to the logged-in user
 export const addBudgets = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const userId = req.user?.id;
@@ -83,7 +83,7 @@ export const updateBudget = catchAsync(
   }
 );
 
-// ✅ Delete a budget only if it belongs to the user
+// Delete a budget only if it belongs to the user
 export const deleteBudget = catchAsync(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const userId = req.user?.id;
@@ -106,7 +106,7 @@ export const deleteBudget = catchAsync(
   }
 );
 
-// ✅ Get budget items only for a budget that belongs to the user
+// Get budget items only for a budget that belongs to the user
 export const getBudgetItems = catchAsync(
   async (req: Request, res: Response) => {
     const userId = req.user?.id; // Get user ID from request

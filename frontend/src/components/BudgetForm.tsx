@@ -4,7 +4,7 @@ import { useForm, useFieldArray } from 'react-hook-form'; // Import React Hook F
 import { zodResolver } from '@hookform/resolvers/zod'; // Import resolver
 import { useNavigate } from 'react-router-dom'; // Import navigation
 
-// ✅ Define the validation schema using Zod for multiple budgets
+// Define the validation schema using Zod for multiple budgets
 const budgetSchema = z.object({
   budgets: z.array(
     z.object({
@@ -26,7 +26,7 @@ function BudgetForm() {
     register,
     handleSubmit,
     control,
-    reset, // ✅ Reset form fields after successful submission
+    reset, // Reset form fields after successful submission
     formState: { errors },
   } = useForm<BudgetFormInputs>({
     resolver: zodResolver(budgetSchema),
@@ -49,9 +49,9 @@ function BudgetForm() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // ✅ Send token
+        Authorization: `Bearer ${token}`, // Send token
       },
-      body: JSON.stringify({ budgets: data.budgets }), // ✅ Wrap data in { budgets: [...] }
+      body: JSON.stringify({ budgets: data.budgets }), // Wrap data in { budgets: [...] }
     })
       .then((response) => {
         if (!response.ok) return Promise.reject('Failed to add budgets');
@@ -59,8 +59,8 @@ function BudgetForm() {
       })
       .then(() => {
         console.log('Budgets added successfully');
-        reset(); // ✅ Clear input fields after successful submission
-        navigate('/budgets'); // ✅ Redirect to the Budget Dashboard
+        reset(); // Clear input fields after successful submission
+        navigate('/budgets'); // Redirect to the Budget Dashboard
       })
       .catch((err) => {
         setErrorMessage('Error adding budgets. Please try again.');

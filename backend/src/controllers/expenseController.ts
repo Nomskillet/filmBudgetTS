@@ -33,7 +33,7 @@ export const addExpense = catchAsync(async (req: Request, res: Response) => {
   res.status(201).json({ message: 'Expense added successfully' });
 });
 
-// ✅ Get all expenses for a budget
+// Get all expenses for a budget
 export const getExpenses = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const budgetId = parseInt(req.params.budgetId, 10);
@@ -67,7 +67,7 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  // ✅ Get the current expense amount before updating
+  // Get the current expense amount before updating
   const expenseResult = await pool.query(
     `SELECT amount, budget_id FROM expenses WHERE id = $1`,
     [expenseId]
@@ -80,7 +80,7 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
 
   const { amount: oldAmount, budget_id } = expenseResult.rows[0];
 
-  // ✅ Update the expense
+  // Update the expense
   const updatedExpense = await updateExpenseInDB(
     expenseId,
     description,
@@ -92,7 +92,7 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  // ✅ Adjust the "spent" column based on the difference in amounts
+  // Adjust the "spent" column based on the difference in amounts
   const amountDifference = amount - oldAmount;
 
   await pool.query(`UPDATE budgets SET spent = spent + $1 WHERE id = $2`, [
@@ -100,7 +100,7 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
     budget_id,
   ]);
 
-  // ✅ Send the updated expense
+  //  Send the updated expense
   res.json(updatedExpense);
 });
 
@@ -119,7 +119,7 @@ export const deleteExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  // ✅ Get the expense details (amount & budget_id)
+  //  Get the expense details (amount & budget_id)
   const expenseResult = await pool.query(
     `SELECT amount, budget_id FROM expenses WHERE id = $1`,
     [expenseId]
