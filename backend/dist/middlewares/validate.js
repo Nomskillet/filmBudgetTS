@@ -1,21 +1,24 @@
 'use strict';
+// import { Request, Response, NextFunction } from 'express';
+// import { AnyZodObject, ZodError } from 'zod';
 Object.defineProperty(exports, '__esModule', { value: true });
 const zod_1 = require('zod');
-// ✅ Validation middleware using Zod
+// ✅ Allow validation for body, query, and params independently
 const validate = (schema) => (req, res, next) => {
   try {
-    schema.parse(req.body); // Throws error if validation fails
-    next(); // Proceed if valid
+    if (schema.body) schema.body.parse(req.body);
+    if (schema.query) schema.query.parse(req.query);
+    if (schema.params) schema.params.parse(req.params);
+    next();
   } catch (err) {
     if (err instanceof zod_1.ZodError) {
-      // Send validation error response
       res.status(400).json({
         success: false,
-        errors: err.errors,
+        errors: err.flatten(),
       });
       return;
     }
-    next(err); // Forward other errors
+    next(err);
   }
 };
 exports.default = validate;

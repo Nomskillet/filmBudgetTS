@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-// ✅ Ensure the return type is correct
+// Ensure the return type is correct
 const catchAsync =
   (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
   (req: Request, res: Response, next: NextFunction) => {

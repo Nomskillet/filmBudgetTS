@@ -69,7 +69,7 @@ exports.addExpense = (0, catchAsync_1.default)((req, res) =>
     res.status(201).json({ message: 'Expense added successfully' });
   })
 );
-// ✅ Get all expenses for a budget
+// Get all expenses for a budget
 exports.getExpenses = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -101,7 +101,7 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
       res.status(400).json({ error: 'Invalid input data' });
       return;
     }
-    // ✅ Get the current expense amount before updating
+    // Get the current expense amount before updating
     const expenseResult = yield db_1.default.query(
       `SELECT amount, budget_id FROM expenses WHERE id = $1`,
       [expenseId]
@@ -111,7 +111,7 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
       return;
     }
     const { amount: oldAmount, budget_id } = expenseResult.rows[0];
-    // ✅ Update the expense
+    // Update the expense
     const updatedExpense = yield (0, budgetService_1.updateExpenseInDB)(
       expenseId,
       description,
@@ -121,13 +121,13 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
       res.status(404).json({ error: 'Expense not found' });
       return;
     }
-    // ✅ Adjust the "spent" column based on the difference in amounts
+    // Adjust the "spent" column based on the difference in amounts
     const amountDifference = amount - oldAmount;
     yield db_1.default.query(
       `UPDATE budgets SET spent = spent + $1 WHERE id = $2`,
       [amountDifference, budget_id]
     );
-    // ✅ Send the updated expense
+    //  Send the updated expense
     res.json(updatedExpense);
   })
 );
@@ -145,7 +145,7 @@ exports.deleteExpense = (0, catchAsync_1.default)((req, res) =>
       res.status(400).json({ error: 'Invalid expense ID' });
       return;
     }
-    // ✅ Get the expense details (amount & budget_id)
+    //  Get the expense details (amount & budget_id)
     const expenseResult = yield db_1.default.query(
       `SELECT amount, budget_id FROM expenses WHERE id = $1`,
       [expenseId]

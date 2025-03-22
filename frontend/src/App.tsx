@@ -1,10 +1,11 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { useState } from 'react';
 import HomePage from './pages/HomePage';
 import BudgetsPage from './pages/BudgetsPage';
 import AddBudgetPage from './pages/AddBudgetPage';
-import CreateUserPage from './pages/CreateUserPage';
-import LoginPage from './pages/LoginPage';
+import AuthPage from './pages/AuthPage';
+
+import Navbar from './components/Navbar';
 import './index.css';
 
 function App() {
@@ -15,48 +16,28 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
-    window.location.href = '/'; // ✅ Redirect to home
+    window.location.href = '/'; // Redirect to home
   };
 
   return (
     <div>
-      <nav className="bg-purple-600 shadow-lg p-4 text-white">
-        <ul className="flex justify-center space-x-8 text-lg font-semibold">
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-
-          {isLoggedIn && (
-            <li>
-              <Link to="/budgets">Budgets</Link>
-            </li>
-          )}
-
-          {!isLoggedIn ? (
-            <>
-              <li>
-                <Link to="/signup">Sign Up</Link>
-              </li>
-              <li>
-                <Link to="/login">Login</Link>
-              </li>
-            </>
-          ) : (
-            <li>
-              <button onClick={handleLogout}>Logout</button>
-            </li>
-          )}
-        </ul>
-      </nav>
+      <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/add-budget" element={<AddBudgetPage />} />
-        <Route path="/signup" element={<CreateUserPage />} />
+        <Route
+          path="/signup"
+          element={
+            <AuthPage initialMode="signup" setIsLoggedIn={setIsLoggedIn} />
+          }
+        />
         <Route
           path="/login"
-          element={<LoginPage setIsLoggedIn={setIsLoggedIn} />}
+          element={
+            <AuthPage initialMode="login" setIsLoggedIn={setIsLoggedIn} />
+          }
         />
       </Routes>
     </div>

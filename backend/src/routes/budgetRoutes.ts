@@ -4,12 +4,12 @@ import {
   addBudgets,
   updateBudget,
   deleteBudget,
-  getBudgetItems,
 } from '../controllers/budgetController';
 import validate from '../middlewares/validate';
 import {
   createBudgetSchema,
   updateBudgetSchema,
+  paramsSchema,
 } from '../schemas/budgetSchema';
 import authMiddleware from '../middlewares/authMiddleware';
 
@@ -29,7 +29,11 @@ router.patch(
   validate(updateBudgetSchema),
   updateBudget
 );
-router.delete('/budget/:id', authMiddleware, deleteBudget);
-router.get('/budgets/:budgetId/items', authMiddleware, getBudgetItems);
+router.delete(
+  '/budget/:id',
+  authMiddleware,
+  validate(paramsSchema),
+  deleteBudget
+);
 
 export default router;

@@ -30,11 +30,7 @@ router.patch(
 router.delete(
   '/budget/:id',
   authMiddleware_1.default,
+  (0, validate_1.default)(budgetSchema_1.paramsSchema),
   budgetController_1.deleteBudget
-);
-router.get(
-  '/budgets/:budgetId/items',
-  authMiddleware_1.default,
-  budgetController_1.getBudgetItems
 );
 exports.default = router;
