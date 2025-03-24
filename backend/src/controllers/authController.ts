@@ -8,7 +8,8 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 
 // Register User
 export const registerUser = catchAsync(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password: encodedPassword } = req.body;
+  const password = Buffer.from(encodedPassword, 'base64').toString('utf-8');
 
   if (!email || !password) {
     res.status(400).json({ error: 'Email and password are required.' });
@@ -37,7 +38,7 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
 
   // Generate JWT token
   const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-    expiresIn: '1h',
+    expiresIn: '24h',
   });
 
   res.status(201).json({ token, user: { id: user.id, email: user.email } });
@@ -45,7 +46,8 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
 
 // Login User
 export const loginUser = catchAsync(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email, password: encodedPassword } = req.body;
+  const password = Buffer.from(encodedPassword, 'base64').toString('utf-8');
 
   if (!email || !password) {
     res.status(400).json({ error: 'Email and password are required.' });
@@ -74,7 +76,7 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
 
   // Generate JWT token
   const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-    expiresIn: '1h',
+    expiresIn: '24h',
   });
 
   res.status(200).json({ token, user: { id: user.id, email: user.email } });

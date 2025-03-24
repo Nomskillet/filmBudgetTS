@@ -1,10 +1,6 @@
-import { Routes, Route } from 'react-router-dom';
+import { useRoutes } from 'react-router-dom';
 import { useState } from 'react';
-import HomePage from './pages/HomePage';
-import BudgetsPage from './pages/BudgetsPage';
-import AddBudgetPage from './pages/AddBudgetPage';
-import AuthPage from './pages/AuthPage';
-
+import { routes } from './routes';
 import Navbar from './components/Navbar';
 import './index.css';
 
@@ -16,30 +12,15 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
-    window.location.href = '/'; // Redirect to home
+    window.location.href = '/';
   };
+
+  const routing = useRoutes(routes(setIsLoggedIn, isLoggedIn));
 
   return (
     <div>
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
-
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/budgets" element={<BudgetsPage />} />
-        <Route path="/add-budget" element={<AddBudgetPage />} />
-        <Route
-          path="/signup"
-          element={
-            <AuthPage initialMode="signup" setIsLoggedIn={setIsLoggedIn} />
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <AuthPage initialMode="login" setIsLoggedIn={setIsLoggedIn} />
-          }
-        />
-      </Routes>
+      {routing}
     </div>
   );
 }
