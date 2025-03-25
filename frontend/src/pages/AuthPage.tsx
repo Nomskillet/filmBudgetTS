@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import api from '../utils/axios'; // ✅ your Axios instance
 import 'react-toastify/dist/ReactToastify.css';
 
 type AuthPageProps = {
@@ -21,38 +22,45 @@ function AuthPage({ initialMode, setIsLoggedIn }: AuthPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const endpoint =
-      mode === 'login'
-        ? 'http://localhost:5001/api/auth/login'
-        : 'http://localhost:5001/api/auth/register';
-
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: btoa(password) }),
+      const endpoint = mode === 'login' ? '/auth/login' : '/auth/register';
+
+      const response = await api.post(endpoint, {
+        email,
+        password: btoa(password), // ✅ still base64-encoded before sending
       });
 
-      const data = await res.json();
+      const data = response.data;
 
-      if (res.ok) {
-        toast.success(
-          mode === 'login' ? 'Login successful!' : 'Account created!'
-        );
+      toast.success(
+        mode === 'login' ? 'Login successful!' : 'Account created!'
+      );
 
-        if (mode === 'login') {
-          localStorage.setItem('token', data.token);
-          setIsLoggedIn(true);
-          setTimeout(() => navigate('/budgets'), 1000);
-        } else {
-          setTimeout(() => setMode('login'), 1500);
-        }
+      if (mode === 'login') {
+        localStorage.setItem('token', data.token);
+        setIsLoggedIn(true);
+        setTimeout(() => navigate('/budgets'), 1000);
       } else {
-        toast.error(data.error || 'Something went wrong');
+        setTimeout(() => setMode('login'), 1500);
       }
-    } catch (err) {
-      console.error('Auth error:', err);
-      toast.error('Error occurred. Please try again.');
+    } catch (error: unknown) {
+      console.error('Auth error:', error);
+
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response
+      ) {
+        const err = error as {
+          response?: { data?: { error?: string } };
+        };
+        toast.error(err.response?.data?.error || 'Something went wrong');
+      } else {
+        toast.error('Unknown error occurred');
+      }
     }
   };
 

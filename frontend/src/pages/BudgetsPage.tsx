@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClipLoader from 'react-spinners/ClipLoader';
+import api from '../utils/axios';
 
 interface Budget {
   id: number;
@@ -21,8 +22,8 @@ function BudgetsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({
     title: '',
-    budget: '0', // Start as a string, convert to number later
-    spent: '0', // Ensure spent is included and starts as a string
+    budget: '0',
+    spent: '0',
   });
   const [search, setSearch] = useState<string>('');
 
@@ -54,56 +55,52 @@ function BudgetsPage() {
   const navigate = useNavigate();
 
   const fetchExpenses = async (budgetId: number) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    try {
+      const response = await api.get(`/expenses/${budgetId}`);
+      const data = response.data;
 
-    const res = await fetch(`http://localhost:5001/api/expenses/${budgetId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) return;
-
-    const data = await res.json();
-    setExpenses((prev) => ({ ...prev, [budgetId]: data }));
+      setExpenses((prev) => ({ ...prev, [budgetId]: data }));
+    } catch (error) {
+      console.error(`Failed to fetch expenses for budget ${budgetId}:`, error);
+    }
   };
 
   const fetchBudgets = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError('No authentication token found. Please log in.');
+    try {
+      const response = await api.get('/budgets');
+      const data = response.data;
+
+      if (Array.isArray(data)) {
+        setBudgets(data);
+        setFilteredBudgets(data);
+
+        // Fetch expenses for each budget
+        data.forEach((budget) => fetchExpenses(budget.id));
+      } else {
+        setError('Invalid data format received from server.');
+      }
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'status' in error.response
+      ) {
+        const err = error as { response: { status: number } };
+        if (err.response.status === 401) {
+          setError('Unauthorized: Please log in again.');
+        } else {
+          setError('Failed to fetch budgets');
+        }
+      } else {
+        setError('Something went wrong');
+      }
+    } finally {
+      // ✅ THIS LINE IS CRUCIAL!
       setLoading(false);
-      return;
     }
-
-    const res = await fetch('http://localhost:5001/api/budgets', {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      setLoading(false);
-      setError(
-        res.status === 401
-          ? 'Unauthorized: Please log in again.'
-          : 'Failed to fetch budgets'
-      );
-      return;
-    }
-
-    const data = await res.json();
-    if (Array.isArray(data)) {
-      setBudgets(data);
-      setFilteredBudgets(data);
-
-      // Fetch expenses for each budget
-      data.forEach((budget) => fetchExpenses(budget.id));
-    } else {
-      setError('Invalid data format received from server.');
-    }
-
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -120,72 +117,40 @@ function BudgetsPage() {
 
   const handleViewExpenses = async (budgetId: number) => {
     if (activeBudget === budgetId) {
-      setActiveBudget(null); // Close expenses if already open
+      setActiveBudget(null); // Toggle off
       return;
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Unauthorized request');
-      return;
-    }
+    try {
+      const response = await api.get(`/expenses/${budgetId}`);
+      const data = response.data;
 
-    // Make sure the API route matches your backend
-    const res = await fetch(`http://localhost:5001/api/expenses/${budgetId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) {
+      setExpenses((prev) => ({ ...prev, [budgetId]: data }));
+      setActiveBudget(budgetId);
+    } catch (error) {
+      console.error('View expenses error:', error);
       toast.error('Failed to load expenses.');
-      return;
     }
-
-    const data = await res.json();
-    console.log('Expenses for budget:', budgetId, data);
-
-    setExpenses((prev) => ({ ...prev, [budgetId]: data }));
-    setActiveBudget(budgetId); // Open expenses for this budget
   };
 
   const handleAddExpense = async () => {
     if (!showAddExpenseModal) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Unauthorized request');
-      return;
-    }
+    try {
+      await api.post(`/budget/${showAddExpenseModal}/expense`, {
+        description: newExpense.description,
+        amount: parseFloat(newExpense.amount),
+      });
 
-    const response = await fetch(
-      `http://localhost:5001/api/budget/${showAddExpenseModal}/expense`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          description: newExpense.description,
-          amount: parseFloat(newExpense.amount),
-        }),
-      }
-    );
+      toast.success('Expense added successfully!');
 
-    if (!response.ok) {
+      setNewExpense({ description: '', amount: '' });
+      setShowAddExpenseModal(null);
+      fetchBudgets();
+    } catch (error) {
+      console.error('Error adding expense:', error);
       toast.error('Failed to add expense.');
-      return;
     }
-
-    toast.success('Expense added successfully!');
-
-    // Clear the input fields
-    setNewExpense({ description: '', amount: '' });
-
-    // Close the modal
-    setShowAddExpenseModal(null);
-
-    // Refresh budgets (spent + remaining)
-    fetchBudgets(); // Make sure fetchBudgets fetches updated spent & remaining
   };
 
   const handleEditExpenseClick = (expense: {
@@ -203,93 +168,64 @@ function BudgetsPage() {
   const handleUpdateExpense = async () => {
     if (!editingExpenseId) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Unauthorized request');
-      return;
-    }
+    try {
+      const response = await api.patch(`/expense/${editingExpenseId}`, {
+        description: editExpenseData.description,
+        amount: parseFloat(editExpenseData.amount),
+      });
 
-    const response = await fetch(
-      `http://localhost:5001/api/expense/${editingExpenseId}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          description: editExpenseData.description,
-          amount: parseFloat(editExpenseData.amount),
-        }),
-      }
-    );
+      const updatedExpense = response.data;
 
-    if (!response.ok) {
-      toast.error('Failed to update expense');
-      return;
-    }
+      setExpenses((prevExpenses) => {
+        const updatedExpenses = prevExpenses[activeBudget!].map((expense) =>
+          expense.id === updatedExpense.id ? updatedExpense : expense
+        );
 
-    const updatedExpense = await response.json();
+        return {
+          ...prevExpenses,
+          [activeBudget!]: updatedExpenses,
+        };
+      });
 
-    // Update the expenses in state
-    setExpenses((prevExpenses) => {
-      const updatedExpenses = prevExpenses[activeBudget!].map((expense) =>
-        expense.id === updatedExpense.id ? updatedExpense : expense
+      const prevExpense = expenses[activeBudget!].find(
+        (expense) => expense.id === updatedExpense.id
+      );
+      const prevAmount = prevExpense ? parseFloat(prevExpense.amount) : 0;
+      const updatedSpent =
+        budgets.find((b) => b.id === activeBudget)!.spent -
+        prevAmount +
+        parseFloat(editExpenseData.amount);
+
+      setBudgets((prevBudgets) =>
+        prevBudgets.map((budget) =>
+          budget.id === activeBudget
+            ? {
+                ...budget,
+                spent: updatedSpent,
+                remaining: budget.budget - updatedSpent,
+              }
+            : budget
+        )
       );
 
-      return {
-        ...prevExpenses,
-        [activeBudget!]: updatedExpenses,
-      };
-    });
-
-    // ✅ Recalculate the new spent amount
-    const prevExpense = expenses[activeBudget!].find(
-      (expense) => expense.id === updatedExpense.id
-    );
-    const prevAmount = prevExpense ? parseFloat(prevExpense.amount) : 0;
-    const updatedSpent =
-      budgets.find((b) => b.id === activeBudget)!.spent -
-      prevAmount +
-      parseFloat(editExpenseData.amount);
-
-    // Update the budget's spent & remaining values
-    setBudgets((prevBudgets) =>
-      prevBudgets.map((budget) => {
-        if (budget.id === activeBudget) {
-          return {
-            ...budget,
-            spent: updatedSpent,
-            remaining: budget.budget - updatedSpent,
-          };
-        }
-        return budget;
-      })
-    );
-
-    setEditingExpenseId(null);
-    toast.success('Expense updated successfully!');
+      setEditingExpenseId(null);
+      toast.success('Expense updated successfully!');
+    } catch (error) {
+      console.error('Update expense error:', error);
+      toast.error('Failed to update expense');
+    }
   };
 
   const handleDelete = async (id: number) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Unauthorized request');
-      return;
-    }
+    try {
+      await api.delete(`/budget/${id}`);
 
-    const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!response.ok) {
+      setBudgets((prevBudgets) => prevBudgets.filter((b) => b.id !== id));
+      toast.success('Budget deleted successfully!');
+    } catch (error) {
+      console.error('Delete budget error:', error);
       toast.error('Failed to delete budget');
-      return;
     }
-
-    setBudgets((prevBudgets) => prevBudgets.filter((b) => b.id !== id));
-    toast.success('Budget deleted successfully!');
   };
 
   // const handleEditClick = (budget: Budget) => {
@@ -304,89 +240,70 @@ function BudgetsPage() {
   const handleDeleteExpense = async (expenseId: number, budgetId: number) => {
     console.log(`Deleting expense: ${expenseId} from budget: ${budgetId}`);
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Unauthorized request');
-      return;
+    try {
+      await api.delete(`/expense/${expenseId}`);
+
+      toast.success('Expense deleted successfully!');
+
+      setExpenses((prevExpenses) => ({
+        ...prevExpenses,
+        [budgetId]: prevExpenses[budgetId].filter(
+          (exp) => exp.id !== expenseId
+        ),
+      }));
+
+      fetchBudgets();
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { data?: { error?: string }; status?: number };
+      };
+      const message = err.response?.data?.error || 'Failed to delete expense';
+      console.error('Delete failed:', error);
+      toast.error(message);
     }
-
-    const response = await fetch(
-      `http://localhost:5001/api/expense/${expenseId}`,
-      {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    if (!response.ok) {
-      const errorMsg = await response.text();
-      console.error('Delete failed:', errorMsg);
-      toast.error(`Failed to delete expense: ${errorMsg}`);
-      return;
-    }
-
-    toast.success('Expense deleted successfully!');
-
-    setExpenses((prevExpenses) => ({
-      ...prevExpenses,
-      [budgetId]: prevExpenses[budgetId].filter((exp) => exp.id !== expenseId),
-    }));
-
-    fetchBudgets();
   };
 
   const handleUpdate = async (id: number) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Unauthorized request');
-      return;
-    }
-
     const requestBody = {
       title: editData.title,
       budget: parseFloat(editData.budget.replace(/^0+(?!$)/, '')) || 0,
-      spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0, // Convert spent to a number
+      spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0,
     };
 
     console.log('Sending update request with:', requestBody);
 
-    const response = await fetch(`http://localhost:5001/api/budget/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    try {
+      const response = await api.patch(`/budget/${id}`, requestBody);
+      const responseData = response.data;
+      console.log('Server response:', responseData);
 
-    const responseData = await response.json();
-    console.log('Server response:', responseData);
-
-    if (!response.ok) {
-      toast.error(
-        `Failed to update budget: ${JSON.stringify(responseData.errors)}`
+      setBudgets((prevBudgets) =>
+        prevBudgets.map((budget) =>
+          budget.id === id
+            ? {
+                ...budget,
+                title: requestBody.title,
+                budget: requestBody.budget,
+                spent: isNaN(Number(budget.spent)) ? 0 : Number(budget.spent),
+                remaining:
+                  requestBody.budget -
+                  (isNaN(Number(budget.spent)) ? 0 : Number(budget.spent)),
+              }
+            : budget
+        )
       );
-      return;
+
+      setEditingId(null);
+      toast.success('Budget updated successfully!');
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { data?: { errors?: string | Record<string, string> } };
+      };
+      console.error('Update error:', error);
+      toast.error(
+        `Failed to update budget: ${JSON.stringify(err.response?.data?.errors)}`
+      );
     }
-
-    setBudgets((prevBudgets) =>
-      prevBudgets.map((budget) =>
-        budget.id === id
-          ? {
-              ...budget,
-              title: requestBody.title,
-              budget: requestBody.budget,
-              spent: isNaN(Number(budget.spent)) ? 0 : Number(budget.spent),
-              remaining:
-                requestBody.budget -
-                (isNaN(Number(budget.spent)) ? 0 : Number(budget.spent)),
-            }
-          : budget
-      )
-    );
-
-    setEditingId(null);
-    toast.success('Budget updated successfully!');
   };
 
   if (loading)
