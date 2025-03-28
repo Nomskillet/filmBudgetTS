@@ -1,10 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit';
+import budgetReducer from './budgetSlice';
+import expenseReducer from './expenseSlice';
 import counterReducer from './counterSlice';
 
+// (Other reducers such as counterReducer, if any)
+
 export const store = configureStore({
-  reducer: { counter: counterReducer },
+  reducer: {
+    budget: budgetReducer,
+    expense: expenseReducer,
+    counter: counterReducer,
+    // other reducers...
+  },
 });
-// Infer the `RootState` and `AppDispatch` types from the store itself
+
 export type RootState = ReturnType<typeof store.getState>;
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
 export type AppDispatch = typeof store.dispatch;
