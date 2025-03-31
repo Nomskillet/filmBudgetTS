@@ -96,19 +96,34 @@ export const getBudgetItemsFromDB = (budgetId: number, userId: number) =>
 export const addExpenseToDB = (
   budgetId: number,
   description: string,
-  amount: number
+  amount: number,
+  owner: string,
+  responsible: string,
+  place_of_purchase: string,
+  purchase_date: number, // epoch timestamp
+  note: string
 ) =>
   pool.query(
-    `INSERT INTO expenses (budget_id, description, amount) 
-     VALUES ($1, $2, $3)`,
-    [budgetId, description, amount]
+    `INSERT INTO expenses 
+      (budget_id, description, amount, owner, responsible, place_of_purchase, purchase_date, note) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [
+      budgetId,
+      description,
+      amount,
+      owner,
+      responsible,
+      place_of_purchase,
+      purchase_date,
+      note,
+    ]
   );
 
 // Get all expenses for a budget
 export const getExpensesFromDB = (budgetId: number) =>
   pool
     .query(
-      `SELECT id, description, amount, created_at 
+      `SELECT id, description, amount, created_at, owner, responsible, place_of_purchase, purchase_date, note
        FROM expenses 
        WHERE budget_id = $1 
        ORDER BY created_at DESC`,

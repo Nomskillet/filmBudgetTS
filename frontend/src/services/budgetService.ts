@@ -1,5 +1,3 @@
-// budgetService.ts
-
 import api from '../utils/axios';
 import type { Budget } from '../store/budgetSlice'; // 1️⃣ Import Budget from budgetSlice
 
@@ -8,7 +6,6 @@ export const getBudgets = async () => {
   return response.data; // returns an array of budgets
 };
 
-// 2️⃣ Use Partial<Budget> for updateData
 export const updateBudget = async (id: number, updateData: Partial<Budget>) => {
   const response = await api.patch(`/budget/${id}`, updateData);
   return response.data; // returns the updated budget

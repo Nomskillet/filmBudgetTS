@@ -1,4 +1,3 @@
-// frontend/src/routes.tsx
 import { RouteObject } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import BudgetsPage from './pages/BudgetsPage';

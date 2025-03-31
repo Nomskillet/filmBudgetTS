@@ -7,6 +7,12 @@ export interface Expense {
   description: string;
   amount: number;
   created_at: string;
+
+  owner?: string;
+  responsible?: string;
+  place_of_purchase?: string;
+  purchase_date?: string;
+  note?: string;
 }
 
 interface ExpenseState {
@@ -46,7 +52,15 @@ export const addExpenseThunk = createAsyncThunk(
       expenseData,
     }: {
       budgetId: number;
-      expenseData: { description: string; amount: number };
+      expenseData: {
+        description: string;
+        amount: number;
+        owner?: string;
+        responsible?: string;
+        place_of_purchase?: string;
+        purchase_date?: number;
+        note?: string;
+      };
     },
     { rejectWithValue }
   ) => {
@@ -125,6 +139,8 @@ const expenseSlice = createSlice({
           budgetId: number;
           expenses: Expense[];
         };
+
+        console.log('Fetched expenses:', expenses);
         state.items[budgetId] = expenses;
       })
       .addCase(fetchExpenses.rejected, (state, action) => {

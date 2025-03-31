@@ -52,7 +52,16 @@ exports.addExpense = (0, catchAsync_1.default)((req, res) =>
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const budgetId = parseInt(req.params.budgetId, 10);
-    const { description, amount } = req.body;
+    // 💡 Now accepting metadata
+    const {
+      description,
+      amount,
+      owner,
+      responsible,
+      place_of_purchase,
+      purchase_date,
+      note,
+    } = req.body;
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -61,7 +70,17 @@ exports.addExpense = (0, catchAsync_1.default)((req, res) =>
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
-    yield (0, budgetService_1.addExpenseToDB)(budgetId, description, amount);
+    // 👉 Call service with full metadata
+    yield (0, budgetService_1.addExpenseToDB)(
+      budgetId,
+      description,
+      amount,
+      owner,
+      responsible,
+      place_of_purchase,
+      purchase_date,
+      note
+    );
     yield db_1.default.query(
       `UPDATE budgets SET spent = spent + $1 WHERE id = $2`,
       [amount, budgetId]

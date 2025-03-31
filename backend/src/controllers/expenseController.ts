@@ -11,7 +11,17 @@ import pool from '../db';
 export const addExpense = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const budgetId = parseInt(req.params.budgetId, 10);
-  const { description, amount } = req.body;
+
+  // 💡 Now accepting metadata
+  const {
+    description,
+    amount,
+    owner,
+    responsible,
+    place_of_purchase,
+    purchase_date,
+    note,
+  } = req.body;
 
   if (!userId) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -23,7 +33,17 @@ export const addExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  await addExpenseToDB(budgetId, description, amount);
+  // 👉 Call service with full metadata
+  await addExpenseToDB(
+    budgetId,
+    description,
+    amount,
+    owner,
+    responsible,
+    place_of_purchase,
+    purchase_date,
+    note
+  );
 
   await pool.query(`UPDATE budgets SET spent = spent + $1 WHERE id = $2`, [
     amount,

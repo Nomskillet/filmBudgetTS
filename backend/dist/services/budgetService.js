@@ -121,18 +121,37 @@ const getBudgetItemsFromDB = (budgetId, userId) =>
     });
 exports.getBudgetItemsFromDB = getBudgetItemsFromDB;
 // Add an expense to the database
-const addExpenseToDB = (budgetId, description, amount) =>
+const addExpenseToDB = (
+  budgetId,
+  description,
+  amount,
+  owner,
+  responsible,
+  place_of_purchase,
+  purchase_date, // epoch timestamp
+  note
+) =>
   db_1.default.query(
-    `INSERT INTO expenses (budget_id, description, amount) 
-     VALUES ($1, $2, $3)`,
-    [budgetId, description, amount]
+    `INSERT INTO expenses 
+      (budget_id, description, amount, owner, responsible, place_of_purchase, purchase_date, note) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [
+      budgetId,
+      description,
+      amount,
+      owner,
+      responsible,
+      place_of_purchase,
+      purchase_date,
+      note,
+    ]
   );
 exports.addExpenseToDB = addExpenseToDB;
 // Get all expenses for a budget
 const getExpensesFromDB = (budgetId) =>
   db_1.default
     .query(
-      `SELECT id, description, amount, created_at 
+      `SELECT id, description, amount, created_at, owner, responsible, place_of_purchase, purchase_date, note
        FROM expenses 
        WHERE budget_id = $1 
        ORDER BY created_at DESC`,
