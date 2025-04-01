@@ -111,7 +111,15 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     const expenseId = parseInt(req.params.expenseId, 10);
-    const { description, amount } = req.body;
+    const {
+      description,
+      amount,
+      owner,
+      responsible,
+      place_of_purchase,
+      purchase_date,
+      note,
+    } = req.body;
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
@@ -134,7 +142,12 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
     const updatedExpense = yield (0, budgetService_1.updateExpenseInDB)(
       expenseId,
       description,
-      amount
+      amount,
+      owner,
+      responsible,
+      place_of_purchase,
+      purchase_date,
+      note
     );
     if (!updatedExpense) {
       res.status(404).json({ error: 'Expense not found' });

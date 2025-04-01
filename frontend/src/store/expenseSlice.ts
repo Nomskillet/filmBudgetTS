@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import expenseService from '../services/expenseService';
 import { AxiosError } from 'axios';
+import type { AddExpensePayload } from '../services/expenseService';
 
 export interface Expense {
   id: number;
@@ -85,7 +86,7 @@ export const updateExpenseThunk = createAsyncThunk(
       budgetId,
     }: {
       expenseId: number;
-      expenseData: { description: string; amount: number };
+      expenseData: AddExpensePayload; // ✅ Now it allows all the fields
       budgetId: number;
     },
     { rejectWithValue }

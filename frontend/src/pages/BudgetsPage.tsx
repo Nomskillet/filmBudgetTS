@@ -64,6 +64,11 @@ function BudgetsPage() {
   const [editExpenseData, setEditExpenseData] = useState({
     description: '',
     amount: '',
+    owner: '',
+    responsible: '',
+    place_of_purchase: '',
+    purchase_date: undefined as number | undefined,
+    note: '',
   });
 
   const [viewExpensesModalBudget, setViewExpensesModalBudget] =
@@ -98,6 +103,10 @@ function BudgetsPage() {
           description: newExpense.description,
           amount: parseFloat(newExpense.amount),
           owner: newExpense.owner,
+          responsible: newExpense.responsible,
+          place_of_purchase: newExpense.place_of_purchase,
+          purchase_date: newExpense.purchase_date,
+          note: newExpense.note,
         },
       })
     )
@@ -125,22 +134,38 @@ function BudgetsPage() {
 
   const handleEditExpenseClick = (expense: Expense, budgetId: number) => {
     setEditingExpenseId(expense.id);
-    setActiveBudget(budgetId); // 🧠 This is what makes saving work
+    setActiveBudget(budgetId); // optional: if you’re using it for updates
     setEditExpenseData({
       description: expense.description,
       amount: expense.amount.toString(),
+      owner: expense.owner || '',
+      responsible: expense.responsible || '',
+      place_of_purchase: expense.place_of_purchase || '',
+      purchase_date: expense.purchase_date
+        ? Number(expense.purchase_date)
+        : undefined,
+      note: expense.note || '',
     });
   };
 
   const handleUpdateExpense = () => {
     if (!editingExpenseId || activeBudget === null) return;
+
+    console.log('Updating expense with:', editExpenseData);
+
     dispatch(
       updateExpenseThunk({
         expenseId: editingExpenseId,
         expenseData: {
           description: editExpenseData.description,
           amount: parseFloat(editExpenseData.amount),
+          owner: editExpenseData.owner,
+          responsible: editExpenseData.responsible,
+          place_of_purchase: editExpenseData.place_of_purchase,
+          purchase_date: editExpenseData.purchase_date,
+          note: editExpenseData.note,
         },
+
         budgetId: activeBudget,
       })
     )
@@ -458,29 +483,133 @@ function BudgetsPage() {
                   >
                     {editingExpenseId === expense.id ? (
                       <div className="flex flex-col gap-2">
-                        <input
-                          type="text"
-                          value={editExpenseData.description}
-                          onChange={(e) =>
-                            setEditExpenseData({
-                              ...editExpenseData,
-                              description: e.target.value,
-                            })
-                          }
-                          className="border p-2 rounded"
-                        />
-                        <input
-                          type="number"
-                          value={editExpenseData.amount}
-                          onChange={(e) =>
-                            setEditExpenseData({
-                              ...editExpenseData,
-                              amount: e.target.value,
-                            })
-                          }
-                          className="border p-2 rounded"
-                        />
-                        <div className="flex justify-end gap-2">
+                        <label>
+                          <span className="block text-sm text-gray-600">
+                            Description
+                          </span>
+                          <input
+                            type="text"
+                            value={editExpenseData.description}
+                            onChange={(e) =>
+                              setEditExpenseData({
+                                ...editExpenseData,
+                                description: e.target.value,
+                              })
+                            }
+                            className="border p-2 rounded w-full"
+                          />
+                        </label>
+
+                        <label>
+                          <span className="block text-sm text-gray-600">
+                            Amount
+                          </span>
+                          <input
+                            type="number"
+                            value={editExpenseData.amount}
+                            onChange={(e) =>
+                              setEditExpenseData({
+                                ...editExpenseData,
+                                amount: e.target.value,
+                              })
+                            }
+                            className="border p-2 rounded w-full"
+                          />
+                        </label>
+
+                        <label>
+                          <span className="block text-sm text-gray-600">
+                            Owner
+                          </span>
+                          <input
+                            type="text"
+                            value={editExpenseData.owner}
+                            onChange={(e) =>
+                              setEditExpenseData({
+                                ...editExpenseData,
+                                owner: e.target.value,
+                              })
+                            }
+                            className="border p-2 rounded w-full"
+                          />
+                        </label>
+
+                        <label>
+                          <span className="block text-sm text-gray-600">
+                            Responsible
+                          </span>
+                          <input
+                            type="text"
+                            value={editExpenseData.responsible}
+                            onChange={(e) =>
+                              setEditExpenseData({
+                                ...editExpenseData,
+                                responsible: e.target.value,
+                              })
+                            }
+                            className="border p-2 rounded w-full"
+                          />
+                        </label>
+
+                        <label>
+                          <span className="block text-sm text-gray-600">
+                            Place of Purchase
+                          </span>
+                          <input
+                            type="text"
+                            value={editExpenseData.place_of_purchase}
+                            onChange={(e) =>
+                              setEditExpenseData({
+                                ...editExpenseData,
+                                place_of_purchase: e.target.value,
+                              })
+                            }
+                            className="border p-2 rounded w-full"
+                          />
+                        </label>
+
+                        <label>
+                          <span className="block text-sm text-gray-600">
+                            Purchase Date
+                          </span>
+                          <input
+                            type="date"
+                            value={
+                              editExpenseData.purchase_date
+                                ? new Date(editExpenseData.purchase_date)
+                                    .toISOString()
+                                    .split('T')[0]
+                                : ''
+                            }
+                            onChange={(e) =>
+                              setEditExpenseData({
+                                ...editExpenseData,
+                                purchase_date: e.target.value
+                                  ? new Date(e.target.value).getTime()
+                                  : undefined,
+                              })
+                            }
+                            className="border p-2 rounded w-full"
+                          />
+                        </label>
+
+                        <label>
+                          <span className="block text-sm text-gray-600">
+                            Note
+                          </span>
+                          <textarea
+                            value={editExpenseData.note}
+                            onChange={(e) =>
+                              setEditExpenseData({
+                                ...editExpenseData,
+                                note: e.target.value,
+                              })
+                            }
+                            className="border p-2 rounded w-full"
+                          />
+                        </label>
+
+                        <div className="flex justify-end gap-2 mt-2">
                           <button
                             onClick={handleUpdateExpense}
                             className="bg-green-500 text-white px-3 py-1 rounded"
@@ -543,7 +672,6 @@ function BudgetsPage() {
                           >
                             Edit
                           </button>
-
                           <button
                             onClick={() =>
                               handleDeleteExpense(

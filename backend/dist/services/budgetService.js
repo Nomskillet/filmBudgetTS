@@ -160,11 +160,38 @@ const getExpensesFromDB = (budgetId) =>
     .then((result) => result.rows);
 exports.getExpensesFromDB = getExpensesFromDB;
 // Update an expense in the database
-const updateExpenseInDB = (expenseId, description, amount) =>
+const updateExpenseInDB = (
+  expenseId,
+  description,
+  amount,
+  owner,
+  responsible,
+  place_of_purchase,
+  purchase_date,
+  note
+) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const result = yield db_1.default.query(
-      'UPDATE expenses SET description = $1, amount = $2 WHERE id = $3 RETURNING *',
-      [description, amount, expenseId]
+      `UPDATE expenses 
+     SET description = $1,
+         amount = $2,
+         owner = $3,
+         responsible = $4,
+         place_of_purchase = $5,
+         purchase_date = $6,
+         note = $7
+     WHERE id = $8
+     RETURNING *`,
+      [
+        description,
+        amount,
+        owner,
+        responsible,
+        place_of_purchase,
+        purchase_date,
+        note,
+        expenseId,
+      ]
     );
     return result.rows[0];
   });

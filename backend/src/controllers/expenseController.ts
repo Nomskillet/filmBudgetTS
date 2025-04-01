@@ -75,7 +75,15 @@ export const getExpenses = catchAsync(async (req: Request, res: Response) => {
 export const updateExpense = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const expenseId = parseInt(req.params.expenseId, 10);
-  const { description, amount } = req.body;
+  const {
+    description,
+    amount,
+    owner,
+    responsible,
+    place_of_purchase,
+    purchase_date,
+    note,
+  } = req.body;
 
   if (!userId) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -104,7 +112,12 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
   const updatedExpense = await updateExpenseInDB(
     expenseId,
     description,
-    amount
+    amount,
+    owner,
+    responsible,
+    place_of_purchase,
+    purchase_date,
+    note
   );
 
   if (!updatedExpense) {

@@ -135,11 +135,34 @@ export const getExpensesFromDB = (budgetId: number) =>
 export const updateExpenseInDB = async (
   expenseId: number,
   description: string,
-  amount: number
+  amount: number,
+  owner?: string,
+  responsible?: string,
+  place_of_purchase?: string,
+  purchase_date?: number,
+  note?: string
 ) => {
   const result = await pool.query(
-    'UPDATE expenses SET description = $1, amount = $2 WHERE id = $3 RETURNING *',
-    [description, amount, expenseId]
+    `UPDATE expenses 
+     SET description = $1,
+         amount = $2,
+         owner = $3,
+         responsible = $4,
+         place_of_purchase = $5,
+         purchase_date = $6,
+         note = $7
+     WHERE id = $8
+     RETURNING *`,
+    [
+      description,
+      amount,
+      owner,
+      responsible,
+      place_of_purchase,
+      purchase_date,
+      note,
+      expenseId,
+    ]
   );
 
   return result.rows[0];
