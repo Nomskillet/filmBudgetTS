@@ -179,6 +179,12 @@ function BudgetsPage() {
   };
 
   const handleDeleteExpense = (expenseId: number, budgetId: number) => {
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete this expense?'
+    );
+
+    if (!confirmDelete) return;
+
     dispatch(deleteExpenseThunk({ expenseId, budgetId }))
       .unwrap()
       .then(() => {
@@ -205,6 +211,12 @@ function BudgetsPage() {
   };
 
   const handleDelete = (id: number) => {
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete this budget?'
+    );
+
+    if (!confirmDelete) return;
+
     dispatch(deleteBudgetThunk(id))
       .unwrap()
       .then(() => toast.success('Budget deleted successfully!'))
