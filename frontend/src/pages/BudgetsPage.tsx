@@ -16,15 +16,7 @@ import {
   deleteExpenseThunk,
 } from '../store/expenseSlice';
 import type { Expense } from '../store/expenseSlice';
-
-export interface Budget {
-  id: number;
-  title: string;
-  budget: number;
-  spent: number;
-  remaining: number;
-  created_at: string;
-}
+import type { Budget } from '../store/budgetSlice';
 
 function BudgetsPage() {
   const dispatch = useAppDispatch();
@@ -71,6 +63,12 @@ function BudgetsPage() {
     note: '',
   });
 
+  const [filteredExpenseGroups, setFilteredExpenseGroups] = useState<
+    { budget: Budget; expenses: Expense[] }[]
+  >([]);
+
+  const [openedFromSearch, setOpenedFromSearch] = useState(false);
+
   const [viewExpensesModalBudget, setViewExpensesModalBudget] =
     useState<Budget | null>(null);
 
@@ -79,11 +77,66 @@ function BudgetsPage() {
   }, [dispatch, navigate]);
 
   useEffect(() => {
+    if (!search.trim()) {
+      setFilteredExpenseGroups([]);
+      return;
+    }
+
+    const lowercaseSearch = search.toLowerCase();
+
+    const groups = budgets
+      .map((budget) => {
+        const allExpenses = expenseState.items[budget.id] || [];
+
+        const matchingExpenses = allExpenses.filter((expense) => {
+          return [
+            expense.description,
+            expense.owner,
+            expense.responsible,
+            expense.place_of_purchase,
+            expense.note,
+          ]
+            .filter(Boolean)
+            .some((field) => field!.toLowerCase().includes(lowercaseSearch));
+        });
+
+        if (matchingExpenses.length > 0) {
+          return { budget, expenses: matchingExpenses };
+        }
+
+        return null;
+      })
+      .filter(Boolean) as { budget: Budget; expenses: Expense[] }[];
+
+    setFilteredExpenseGroups(groups);
+  }, [search, budgets, expenseState.items]);
+
+  useEffect(() => {
     setFilteredBudgets(
-      budgets.filter((budget) =>
-        budget.title.toLowerCase().includes(search.toLowerCase())
-      )
+      budgets.filter((budget) => {
+        const budgetTitleMatch = budget.title
+          .toLowerCase()
+          .includes(search.toLowerCase());
+        const expenses = expenseState.items[budget.id] || [];
+
+        const expenseMatch = expenses.some((expense) =>
+          [
+            expense.description,
+            expense.owner,
+            expense.responsible,
+            expense.place_of_purchase,
+            expense.note,
+          ]
+            .filter(Boolean)
+            .some((field) =>
+              field?.toLowerCase().includes(search.toLowerCase())
+            )
+        );
+
+        return budgetTitleMatch || expenseMatch;
+      })
     );
+
     budgets.forEach((b) => dispatch(fetchExpenses(b.id)));
   }, [search, budgets, dispatch]);
 
@@ -134,7 +187,7 @@ function BudgetsPage() {
 
   const handleEditExpenseClick = (expense: Expense, budgetId: number) => {
     setEditingExpenseId(expense.id);
-    setActiveBudget(budgetId); // optional: if you’re using it for updates
+    setActiveBudget(budgetId);
     setEditExpenseData({
       description: expense.description,
       amount: expense.amount.toString(),
@@ -146,12 +199,18 @@ function BudgetsPage() {
         : undefined,
       note: expense.note || '',
     });
+
+    // ✅ Only open the modal if it's not already open
+    if (!viewExpensesModalBudget || viewExpensesModalBudget.id !== budgetId) {
+      const matchingBudget = budgets.find((b) => b.id === budgetId);
+      if (matchingBudget) {
+        setViewExpensesModalBudget(matchingBudget);
+      }
+    }
   };
 
   const handleUpdateExpense = () => {
     if (!editingExpenseId || activeBudget === null) return;
-
-    console.log('Updating expense with:', editExpenseData);
 
     dispatch(
       updateExpenseThunk({
@@ -165,7 +224,6 @@ function BudgetsPage() {
           purchase_date: editExpenseData.purchase_date,
           note: editExpenseData.note,
         },
-
         budgetId: activeBudget,
       })
     )
@@ -174,6 +232,12 @@ function BudgetsPage() {
         toast.success('Expense updated successfully!');
         setEditingExpenseId(null);
         dispatch(fetchExpenses(activeBudget));
+
+        // ✅ Only close the modal if it was opened via search
+        if (openedFromSearch) {
+          setViewExpensesModalBudget(null);
+          setOpenedFromSearch(false); // clear flag
+        }
       })
       .catch(() => toast.error('Failed to update expense'));
   };
@@ -358,123 +422,186 @@ function BudgetsPage() {
       )}
 
       <ul className="space-y-4">
-        {filteredBudgets.map((budget) => {
-          const expenses = expenseState.items[budget.id] || [];
-          const dynamicSpent = expenses.reduce(
-            (sum, e) => sum + Number(e.amount),
-            0
-          );
-          const dynamicRemaining = budget.budget - dynamicSpent;
+        {search.trim() === ''
+          ? filteredBudgets.map((budget) => {
+              const expenses = expenseState.items[budget.id] || [];
+              const dynamicSpent = expenses.reduce(
+                (sum, e) => sum + Number(e.amount),
+                0
+              );
+              const dynamicRemaining = budget.budget - dynamicSpent;
 
-          return (
-            <li
-              key={budget.id}
-              className="border rounded-lg p-4 shadow-sm hover:shadow-md transition"
-            >
-              {editingId === budget.id ? (
-                <div className="space-y-2">
-                  <label className="block text-gray-700 font-semibold">
-                    Budget Name:
-                  </label>
-                  <input
-                    type="text"
-                    value={editData.title}
-                    onChange={(e) =>
-                      setEditData({ ...editData, title: e.target.value })
-                    }
-                    className="p-2 border rounded w-full"
-                  />
-                  <label className="block text-gray-700 font-semibold">
-                    Total Budget Amount:
-                  </label>
-                  <input
-                    type="text"
-                    value={editData.budget}
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        budget: e.target.value.replace(/^0+(?!$)/, ''),
-                      })
-                    }
-                    className="p-2 border rounded w-full"
-                  />
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      onClick={() => handleUpdate(budget.id)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="px-4 py-2 bg-gray-400 text-white rounded"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <h2 className="text-xl font-semibold text-purple-700">
-                    {budget.title}
-                  </h2>
-                  <p className="text-gray-600">
-                    Budget: ${Number(budget.budget).toFixed(2)}
-                  </p>
-                  <p className="text-gray-600">
-                    Spent: ${dynamicSpent.toFixed(2)}
-                  </p>
-                  <p
-                    className={`text-gray-600 ${
-                      dynamicRemaining < 0 ? 'text-red-500' : ''
-                    }`}
-                  >
-                    Remaining:{' '}
-                    {dynamicRemaining < 0
-                      ? `-$${Math.abs(dynamicRemaining).toFixed(2)}`
-                      : `$${dynamicRemaining.toFixed(2)}`}
-                  </p>
-                  <div className="mt-2">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingId(budget.id);
+              return (
+                <li
+                  key={budget.id}
+                  className="border rounded-lg p-4 shadow-sm hover:shadow-md transition"
+                >
+                  {editingId === budget.id ? (
+                    <div className="space-y-2">
+                      <label className="block text-gray-700 font-semibold">
+                        Budget Name:
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.title}
+                        onChange={(e) =>
+                          setEditData({ ...editData, title: e.target.value })
+                        }
+                        className="p-2 border rounded w-full"
+                      />
+                      <label className="block text-gray-700 font-semibold">
+                        Total Budget Amount:
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.budget}
+                        onChange={(e) =>
                           setEditData({
-                            title: budget.title,
-                            budget: budget.budget.toString(),
-                            spent: dynamicSpent.toString(),
-                          });
-                        }}
-                        className="px-4 py-2 bg-yellow-500 text-white rounded"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(budget.id)}
-                        className="px-4 py-2 bg-red-500 text-white rounded"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => handleViewExpenses(budget.id)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded"
-                      >
-                        View Expenses
-                      </button>
-
-                      <button
-                        onClick={() => setShowAddExpenseModal(budget.id)}
-                        className="ml-2 px-4 py-2 bg-green-500 text-white rounded"
-                      >
-                        + Add Expense
-                      </button>
+                            ...editData,
+                            budget: e.target.value.replace(/^0+(?!$)/, ''),
+                          })
+                        }
+                        className="p-2 border rounded w-full"
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => handleUpdate(budget.id)}
+                          className="px-4 py-2 bg-blue-500 text-white rounded"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="px-4 py-2 bg-gray-400 text-white rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
-            </li>
-          );
-        })}
+                  ) : (
+                    <div>
+                      <h2 className="text-xl font-semibold text-purple-700">
+                        {budget.title}
+                      </h2>
+                      <p className="text-gray-600">
+                        Budget: ${Number(budget.budget).toFixed(2)}
+                      </p>
+                      <p className="text-gray-600">
+                        Spent: ${dynamicSpent.toFixed(2)}
+                      </p>
+                      <p
+                        className={`text-gray-600 ${
+                          dynamicRemaining < 0 ? 'text-red-500' : ''
+                        }`}
+                      >
+                        Remaining:{' '}
+                        {dynamicRemaining < 0
+                          ? `-$${Math.abs(dynamicRemaining).toFixed(2)}`
+                          : `$${dynamicRemaining.toFixed(2)}`}
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingId(budget.id);
+                            setEditData({
+                              title: budget.title,
+                              budget: budget.budget.toString(),
+                              spent: dynamicSpent.toString(),
+                            });
+                          }}
+                          className="px-4 py-2 bg-yellow-500 text-white rounded"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(budget.id)}
+                          className="px-4 py-2 bg-red-500 text-white rounded"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => handleViewExpenses(budget.id)}
+                          className="px-4 py-2 bg-blue-500 text-white rounded"
+                        >
+                          View Expenses
+                        </button>
+                        <button
+                          onClick={() => setShowAddExpenseModal(budget.id)}
+                          className="ml-2 px-4 py-2 bg-green-500 text-white rounded"
+                        >
+                          + Add Expense
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })
+          : filteredExpenseGroups.map(({ budget, expenses }) => (
+              <li
+                key={budget.id}
+                className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition"
+              >
+                <h2 className="text-xl font-bold text-purple-700 mb-2">
+                  {budget.title}
+                </h2>
+                <ul className="space-y-2">
+                  {expenses.map((expense) => (
+                    <li
+                      key={expense.id}
+                      className="border rounded p-4 bg-gray-50 shadow-sm flex justify-between items-start"
+                    >
+                      <div>
+                        <p className="font-semibold">{expense.description}</p>
+                        <p className="text-sm text-gray-700">
+                          Amount: ${Number(expense.amount).toFixed(2)}
+                        </p>
+                        {expense.owner && (
+                          <p className="text-sm text-gray-700">
+                            Owner: {expense.owner}
+                          </p>
+                        )}
+                        {expense.responsible && (
+                          <p className="text-sm text-gray-700">
+                            Responsible: {expense.responsible}
+                          </p>
+                        )}
+                        {expense.place_of_purchase && (
+                          <p className="text-sm text-gray-700">
+                            Place: {expense.place_of_purchase}
+                          </p>
+                        )}
+                        {expense.note && (
+                          <p className="text-sm italic text-gray-600">
+                            Note: {expense.note}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setOpenedFromSearch(true);
+                            handleEditExpenseClick(expense, budget.id);
+                          }}
+                          className="text-blue-500"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleDeleteExpense(expense.id, budget.id)
+                          }
+                          className="text-red-500 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
       </ul>
 
       {viewExpensesModalBudget && (
