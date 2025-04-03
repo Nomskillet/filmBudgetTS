@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClipLoader from 'react-spinners/ClipLoader';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import {
-  fetchBudgets,
-  updateBudgetThunk,
-  deleteBudgetThunk,
-} from '../store/budgetSlice';
+import // fetchBudgets,
+// updateBudgetThunk,
+// deleteBudgetThunk,
+'../store/budgetSlice';
 import {
   fetchExpenses,
   addExpenseThunk,
@@ -17,16 +16,25 @@ import {
 } from '../store/expenseSlice';
 import type { Expense } from '../store/expenseSlice';
 import type { Budget } from '../store/budgetSlice';
+import {
+  useGetBudgetsQuery,
+  useUpdateBudgetMutation,
+  useDeleteBudgetMutation, // ← add this
+} from '../store/budgetApi';
 
 function BudgetsPage() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const {
-    items: budgets,
-    loading,
+    data: budgets = [],
+    isLoading: loading,
     error,
-  } = useAppSelector((state) => state.budget);
+  } = useGetBudgetsQuery();
+
+  const [updateBudget] = useUpdateBudgetMutation();
+  const [deleteBudget] = useDeleteBudgetMutation();
+
   const expenseState = useAppSelector((state) => state.expense);
 
   const [filteredBudgets, setFilteredBudgets] = useState<Budget[]>([]);
@@ -72,9 +80,9 @@ function BudgetsPage() {
   const [viewExpensesModalBudget, setViewExpensesModalBudget] =
     useState<Budget | null>(null);
 
-  useEffect(() => {
-    dispatch(fetchBudgets());
-  }, [dispatch, navigate]);
+  // useEffect(() => {
+  //   dispatch(fetchBudgets());
+  // }, [dispatch, navigate]);
 
   useEffect(() => {
     if (!search.trim()) {
@@ -264,12 +272,12 @@ function BudgetsPage() {
       budget: parseFloat(editData.budget.replace(/^0+(?!$)/, '')) || 0,
       spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0,
     };
-    dispatch(updateBudgetThunk({ id, updatedData: requestBody }))
+
+    updateBudget({ id, updatedData: requestBody })
       .unwrap()
       .then(() => {
         toast.success('Budget updated successfully!');
         setEditingId(null);
-        dispatch(fetchBudgets());
       })
       .catch(() => toast.error('Failed to update budget'));
   };
@@ -281,7 +289,7 @@ function BudgetsPage() {
 
     if (!confirmDelete) return;
 
-    dispatch(deleteBudgetThunk(id))
+    deleteBudget(id)
       .unwrap()
       .then(() => toast.success('Budget deleted successfully!'))
       .catch(() => toast.error('Failed to delete budget'));
@@ -296,7 +304,13 @@ function BudgetsPage() {
   }
 
   if (error) {
-    return <p className="text-red-500">{error}</p>;
+    return (
+      <p className="text-red-500">
+        {typeof error === 'object' && 'status' in error
+          ? `Error: ${error.status}`
+          : 'An unexpected error occurred.'}
+      </p>
+    );
   }
 
   return (

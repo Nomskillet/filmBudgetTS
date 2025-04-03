@@ -3,6 +3,7 @@ import { z } from 'zod'; // Import Zod
 import { useForm, useFieldArray } from 'react-hook-form'; // Import React Hook Form and Field Array
 import { zodResolver } from '@hookform/resolvers/zod'; // Import resolver
 import { useNavigate } from 'react-router-dom'; // Import navigation
+import { useAddBudgetMutation } from '../store/budgetApi';
 
 // Define the validation schema using Zod for multiple budgets
 const budgetSchema = z.object({
@@ -20,7 +21,8 @@ type BudgetFormInputs = z.infer<typeof budgetSchema>; // Infer TypeScript types 
 
 function BudgetForm() {
   const navigate = useNavigate(); // React Router navigation
-  const token = localStorage.getItem('token'); // Retrieve token
+
+  const [addBudget] = useAddBudgetMutation();
 
   const {
     register,
@@ -45,22 +47,11 @@ function BudgetForm() {
   const onSubmit = (data: BudgetFormInputs) => {
     setErrorMessage('');
 
-    fetch('http://localhost:5001/api/budget', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // Send token
-      },
-      body: JSON.stringify({ budgets: data.budgets }), // Wrap data in { budgets: [...] }
-    })
-      .then((response) => {
-        if (!response.ok) return Promise.reject('Failed to add budgets');
-        return response.json();
-      })
+    addBudget({ budgets: data.budgets })
+      .unwrap()
       .then(() => {
-        console.log('Budgets added successfully');
-        reset(); // Clear input fields after successful submission
-        navigate('/budgets'); // Redirect to the Budget Dashboard
+        reset();
+        navigate('/budgets');
       })
       .catch((err) => {
         setErrorMessage('Error adding budgets. Please try again.');

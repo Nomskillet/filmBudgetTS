@@ -2,16 +2,17 @@ import { configureStore } from '@reduxjs/toolkit';
 import budgetReducer from './budgetSlice';
 import expenseReducer from './expenseSlice';
 import counterReducer from './counterSlice';
-
-// (Other reducers such as counterReducer, if any)
+import { budgetApi } from './budgetApi';
 
 export const store = configureStore({
   reducer: {
     budget: budgetReducer,
     expense: expenseReducer,
     counter: counterReducer,
-    // other reducers...
+    [budgetApi.reducerPath]: budgetApi.reducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(budgetApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
