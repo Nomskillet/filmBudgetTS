@@ -3,33 +3,23 @@ import { Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClipLoader from 'react-spinners/ClipLoader';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import // fetchBudgets,
-// updateBudgetThunk,
-// deleteBudgetThunk,
-'../store/budgetSlice';
-import {} from // fetchExpenses,
-// addExpenseThunk,
-// updateExpenseThunk,
-// deleteExpenseThunk,
-'../store/expenseSlice';
+// import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { Expense } from '../store/expenseSlice';
 import type { Budget } from '../store/budgetSlice';
 import {
   useGetBudgetsQuery,
   useUpdateBudgetMutation,
-  useDeleteBudgetMutation, // ← add this
+  useDeleteBudgetMutation,
 } from '../store/budgetApi';
-import { useGetAllExpensesQuery } from '../store/expenseApi';
 import {
+  useGetAllExpensesQuery,
   useAddExpenseMutation,
   useDeleteExpenseMutation,
+  useUpdateExpenseMutation,
 } from '../store/expenseApi';
-import { useUpdateExpenseMutation } from '../store/expenseApi';
 
 function BudgetsPage() {
-  const dispatch = useAppDispatch();
-  // const navigate = useNavigate();
+  // const dispatch = useAppDispatch();
 
   const {
     data: budgets = [],
@@ -43,14 +33,11 @@ function BudgetsPage() {
   const [addExpense] = useAddExpenseMutation();
   const [updateExpense] = useUpdateExpenseMutation();
 
-  // console.log('All Expenses from RTK Query:', allExpenses);
-
   const [updateBudget] = useUpdateBudgetMutation();
   const [deleteBudget] = useDeleteBudgetMutation();
 
-  const expenseState = useAppSelector((state) => state.expense);
+  // const expenseState = useAppSelector((state) => state.expense);
 
-  const [filteredBudgets, setFilteredBudgets] = useState<Budget[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({
     title: '',
@@ -93,10 +80,6 @@ function BudgetsPage() {
   const [viewExpensesModalBudget, setViewExpensesModalBudget] =
     useState<Budget | null>(null);
 
-  // useEffect(() => {
-  //   dispatch(fetchBudgets());
-  // }, [dispatch, navigate]);
-
   useEffect(() => {
     if (!search.trim()) {
       setFilteredExpenseGroups([]);
@@ -107,9 +90,11 @@ function BudgetsPage() {
 
     const groups = budgets
       .map((budget) => {
-        const allExpenses = expenseState.items[budget.id] || [];
+        const allExpensesForBudget = allExpenses.filter(
+          (exp) => exp.budget_id === budget.id
+        );
 
-        const matchingExpenses = allExpenses.filter((expense) => {
+        const matchingExpenses = allExpensesForBudget.filter((expense) => {
           return [
             expense.description,
             expense.owner,
@@ -121,8 +106,17 @@ function BudgetsPage() {
             .some((field) => field!.toLowerCase().includes(lowercaseSearch));
         });
 
-        if (matchingExpenses.length > 0) {
-          return { budget, expenses: matchingExpenses };
+        const budgetTitleMatch = budget.title
+          .toLowerCase()
+          .includes(lowercaseSearch);
+
+        if (budgetTitleMatch || matchingExpenses.length > 0) {
+          return {
+            budget,
+            expenses: budgetTitleMatch
+              ? allExpensesForBudget
+              : matchingExpenses,
+          };
         }
 
         return null;
@@ -130,34 +124,7 @@ function BudgetsPage() {
       .filter(Boolean) as { budget: Budget; expenses: Expense[] }[];
 
     setFilteredExpenseGroups(groups);
-  }, [search, budgets, expenseState.items]);
-
-  useEffect(() => {
-    setFilteredBudgets(
-      budgets.filter((budget) => {
-        const budgetTitleMatch = budget.title
-          .toLowerCase()
-          .includes(search.toLowerCase());
-        const expenses = expenseState.items[budget.id] || [];
-
-        const expenseMatch = expenses.some((expense) =>
-          [
-            expense.description,
-            expense.owner,
-            expense.responsible,
-            expense.place_of_purchase,
-            expense.note,
-          ]
-            .filter(Boolean)
-            .some((field) =>
-              field?.toLowerCase().includes(search.toLowerCase())
-            )
-        );
-
-        return budgetTitleMatch || expenseMatch;
-      })
-    );
-  }, [search, budgets, dispatch]);
+  }, [search, budgets, allExpenses]);
 
   const handleViewExpenses = (budgetId: number) => {
     const selected = budgets.find((b) => b.id === budgetId);
@@ -178,7 +145,10 @@ function BudgetsPage() {
           owner: newExpense.owner,
           responsible: newExpense.responsible,
           place_of_purchase: newExpense.place_of_purchase,
-          purchase_date: newExpense.purchase_date,
+          purchase_date: editExpenseData.purchase_date
+            ? new Date(editExpenseData.purchase_date).toISOString()
+            : undefined,
+
           note: newExpense.note,
         },
       }).unwrap();
@@ -238,7 +208,10 @@ function BudgetsPage() {
           owner: editExpenseData.owner,
           responsible: editExpenseData.responsible,
           place_of_purchase: editExpenseData.place_of_purchase,
-          purchase_date: editExpenseData.purchase_date,
+          purchase_date: editExpenseData.purchase_date
+            ? new Date(editExpenseData.purchase_date).toISOString()
+            : undefined,
+
           note: editExpenseData.note,
         },
         budgetId: activeBudget,
@@ -446,7 +419,7 @@ function BudgetsPage() {
 
       <ul className="space-y-4">
         {search.trim() === ''
-          ? filteredBudgets.map((budget) => {
+          ? budgets.map((budget) => {
               const expenses = allExpenses.filter(
                 (exp) => exp.budget_id === budget.id
               );
