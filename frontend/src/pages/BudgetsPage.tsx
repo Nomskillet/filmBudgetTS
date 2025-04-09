@@ -8,12 +8,11 @@ import // fetchBudgets,
 // updateBudgetThunk,
 // deleteBudgetThunk,
 '../store/budgetSlice';
-import {
-  fetchExpenses,
-  addExpenseThunk,
-  updateExpenseThunk,
-  deleteExpenseThunk,
-} from '../store/expenseSlice';
+import {} from // fetchExpenses,
+// addExpenseThunk,
+// updateExpenseThunk,
+// deleteExpenseThunk,
+'../store/expenseSlice';
 import type { Expense } from '../store/expenseSlice';
 import type { Budget } from '../store/budgetSlice';
 import {
@@ -21,6 +20,12 @@ import {
   useUpdateBudgetMutation,
   useDeleteBudgetMutation, // ← add this
 } from '../store/budgetApi';
+import { useGetAllExpensesQuery } from '../store/expenseApi';
+import {
+  useAddExpenseMutation,
+  useDeleteExpenseMutation,
+} from '../store/expenseApi';
+import { useUpdateExpenseMutation } from '../store/expenseApi';
 
 function BudgetsPage() {
   const dispatch = useAppDispatch();
@@ -31,6 +36,14 @@ function BudgetsPage() {
     isLoading: loading,
     error,
   } = useGetBudgetsQuery();
+
+  const { data: allExpenses = [], refetch } = useGetAllExpensesQuery();
+
+  const [deleteExpense] = useDeleteExpenseMutation();
+  const [addExpense] = useAddExpenseMutation();
+  const [updateExpense] = useUpdateExpenseMutation();
+
+  // console.log('All Expenses from RTK Query:', allExpenses);
 
   const [updateBudget] = useUpdateBudgetMutation();
   const [deleteBudget] = useDeleteBudgetMutation();
@@ -144,8 +157,6 @@ function BudgetsPage() {
         return budgetTitleMatch || expenseMatch;
       })
     );
-
-    budgets.forEach((b) => dispatch(fetchExpenses(b.id)));
   }, [search, budgets, dispatch]);
 
   const handleViewExpenses = (budgetId: number) => {
@@ -155,10 +166,11 @@ function BudgetsPage() {
     }
   };
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     if (!showAddExpenseModal) return;
-    dispatch(
-      addExpenseThunk({
+
+    try {
+      await addExpense({
         budgetId: showAddExpenseModal,
         expenseData: {
           description: newExpense.description,
@@ -169,28 +181,25 @@ function BudgetsPage() {
           purchase_date: newExpense.purchase_date,
           note: newExpense.note,
         },
-      })
-    )
-      .unwrap()
-      .then(() => {
-        toast.success('Expense added successfully!');
-        setNewExpense({
-          description: '',
-          amount: '',
-          owner: '',
-          responsible: '',
-          place_of_purchase: '',
-          purchase_date: undefined as number | undefined,
-          note: '',
-        });
+      }).unwrap();
+      refetch();
 
-        dispatch(fetchExpenses(showAddExpenseModal));
-        setShowAddExpenseModal(null);
-      })
-      .catch((err) => {
-        console.error('Add expense error:', err);
-        toast.error('Failed to add expense');
+      toast.success('Expense added successfully!');
+      setNewExpense({
+        description: '',
+        amount: '',
+        owner: '',
+        responsible: '',
+        place_of_purchase: '',
+        purchase_date: undefined,
+        note: '',
       });
+
+      setShowAddExpenseModal(null);
+    } catch (err) {
+      console.error('Add expense error:', err);
+      toast.error('Failed to add expense');
+    }
   };
 
   const handleEditExpenseClick = (expense: Expense, budgetId: number) => {
@@ -217,11 +226,11 @@ function BudgetsPage() {
     }
   };
 
-  const handleUpdateExpense = () => {
+  const handleUpdateExpense = async () => {
     if (!editingExpenseId || activeBudget === null) return;
 
-    dispatch(
-      updateExpenseThunk({
+    try {
+      await updateExpense({
         expenseId: editingExpenseId,
         expenseData: {
           description: editExpenseData.description,
@@ -233,37 +242,37 @@ function BudgetsPage() {
           note: editExpenseData.note,
         },
         budgetId: activeBudget,
-      })
-    )
-      .unwrap()
-      .then(() => {
-        toast.success('Expense updated successfully!');
-        setEditingExpenseId(null);
-        dispatch(fetchExpenses(activeBudget));
+      }).unwrap();
 
-        // ✅ Only close the modal if it was opened via search
-        if (openedFromSearch) {
-          setViewExpensesModalBudget(null);
-          setOpenedFromSearch(false); // clear flag
-        }
-      })
-      .catch(() => toast.error('Failed to update expense'));
+      toast.success('Expense updated successfully!');
+      setEditingExpenseId(null);
+
+      // ✅ Critical part for dynamic update
+      refetch();
+
+      // ✅ Modal cleanup
+      if (openedFromSearch) {
+        setViewExpensesModalBudget(null);
+        setOpenedFromSearch(false);
+      }
+    } catch (error) {
+      console.error('Failed to update expense:', error);
+      toast.error('Failed to update expense');
+    }
   };
 
-  const handleDeleteExpense = (expenseId: number, budgetId: number) => {
+  const handleDeleteExpense = async (expenseId: number, budgetId: number) => {
     const confirmDelete = window.confirm(
       'Are you sure you want to delete this expense?'
     );
-
     if (!confirmDelete) return;
 
-    dispatch(deleteExpenseThunk({ expenseId, budgetId }))
-      .unwrap()
-      .then(() => {
-        toast.success('Expense deleted successfully!');
-        dispatch(fetchExpenses(budgetId));
-      })
-      .catch(() => toast.error('Failed to delete expense'));
+    try {
+      await deleteExpense({ budgetId, expenseId }).unwrap();
+      toast.success('Expense deleted successfully!');
+    } catch {
+      toast.error('Failed to delete expense');
+    }
   };
 
   const handleUpdate = (id: number) => {
@@ -438,7 +447,10 @@ function BudgetsPage() {
       <ul className="space-y-4">
         {search.trim() === ''
           ? filteredBudgets.map((budget) => {
-              const expenses = expenseState.items[budget.id] || [];
+              const expenses = allExpenses.filter(
+                (exp) => exp.budget_id === budget.id
+              );
+
               const dynamicSpent = expenses.reduce(
                 (sum, e) => sum + Number(e.amount),
                 0
@@ -628,8 +640,9 @@ function BudgetsPage() {
               </span>
             </h2>
             <ul className="space-y-4">
-              {(expenseState.items[viewExpensesModalBudget.id] || []).map(
-                (expense) => (
+              {allExpenses
+                .filter((e) => e.budget_id === viewExpensesModalBudget.id)
+                .map((expense) => (
                   <li
                     key={expense.id}
                     className="border rounded p-4 bg-gray-50"
@@ -840,8 +853,7 @@ function BudgetsPage() {
                       </div>
                     )}
                   </li>
-                )
-              )}
+                ))}
             </ul>
             <div className="flex justify-end mt-6">
               <button

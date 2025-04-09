@@ -93,17 +93,19 @@ exports.getExpenses = (0, catchAsync_1.default)((req, res) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
-    const budgetId = parseInt(req.params.budgetId, 10);
-    if (!userId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+    const budgetIdParam = req.params.budgetId;
+    if (budgetIdParam) {
+      const budgetId = parseInt(budgetIdParam, 10);
+      if (isNaN(budgetId)) {
+        res.status(400).json({ error: 'Invalid budget ID' });
+        return;
+      }
+      const expenses = yield (0, budgetService_1.getExpensesFromDB)(budgetId);
+      return res.json(expenses);
     }
-    if (isNaN(budgetId)) {
-      res.status(400).json({ error: 'Invalid budget ID' });
-      return;
-    }
-    const expenses = yield (0, budgetService_1.getExpensesFromDB)(budgetId);
-    res.json(expenses);
+    // ✅ No budgetId param: fetch all expenses
+    const allExpenses = yield db_1.default.query('SELECT * FROM expenses');
+    res.json(allExpenses.rows);
   })
 );
 exports.updateExpense = (0, catchAsync_1.default)((req, res) =>

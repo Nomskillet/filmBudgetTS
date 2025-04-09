@@ -9,9 +9,11 @@ import authMiddleware from '../middlewares/authMiddleware';
 
 const router = Router();
 
+router.get('/expenses', authMiddleware, getExpenses);
 router.get('/expenses/:budgetId', authMiddleware, getExpenses);
 router.post('/budget/:budgetId/expense', authMiddleware, addExpense);
-router.patch('/expense/:expenseId', authMiddleware, updateExpense);
-router.delete('/expense/:expenseId', authMiddleware, deleteExpense);
+router.patch('/expenses/:budgetId/:expenseId', authMiddleware, updateExpense);
+
+router.delete('/expenses/:budgetId/:expenseId', authMiddleware, deleteExpense);
 
 export default router;

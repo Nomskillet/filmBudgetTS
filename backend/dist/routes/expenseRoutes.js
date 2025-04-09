@@ -12,6 +12,11 @@ const authMiddleware_1 = __importDefault(
 );
 const router = (0, express_1.Router)();
 router.get(
+  '/expenses',
+  authMiddleware_1.default,
+  expenseController_1.getExpenses
+);
+router.get(
   '/expenses/:budgetId',
   authMiddleware_1.default,
   expenseController_1.getExpenses
@@ -22,12 +27,12 @@ router.post(
   expenseController_1.addExpense
 );
 router.patch(
-  '/expense/:expenseId',
+  '/expenses/:budgetId/:expenseId',
   authMiddleware_1.default,
   expenseController_1.updateExpense
 );
 router.delete(
-  '/expense/:expenseId',
+  '/expenses/:budgetId/:expenseId',
   authMiddleware_1.default,
   expenseController_1.deleteExpense
 );

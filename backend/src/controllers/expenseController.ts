@@ -56,20 +56,22 @@ export const addExpense = catchAsync(async (req: Request, res: Response) => {
 // Get all expenses for a budget
 export const getExpenses = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const budgetId = parseInt(req.params.budgetId, 10);
+  const budgetIdParam = req.params.budgetId;
 
-  if (!userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
+  if (budgetIdParam) {
+    const budgetId = parseInt(budgetIdParam, 10);
+    if (isNaN(budgetId)) {
+      res.status(400).json({ error: 'Invalid budget ID' });
+      return;
+    }
+
+    const expenses = await getExpensesFromDB(budgetId);
+    return res.json(expenses);
   }
 
-  if (isNaN(budgetId)) {
-    res.status(400).json({ error: 'Invalid budget ID' });
-    return;
-  }
-
-  const expenses = await getExpensesFromDB(budgetId);
-  res.json(expenses);
+  // ✅ No budgetId param: fetch all expenses
+  const allExpenses = await pool.query('SELECT * FROM expenses');
+  res.json(allExpenses.rows);
 });
 
 export const updateExpense = catchAsync(async (req: Request, res: Response) => {

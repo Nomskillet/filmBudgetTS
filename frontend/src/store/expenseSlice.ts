@@ -5,6 +5,7 @@ import type { AddExpensePayload } from '../services/expenseService';
 
 export interface Expense {
   id: number;
+  budget_id: number;
   description: string;
   amount: number;
   created_at: string;

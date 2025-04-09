@@ -4,6 +4,7 @@ import BudgetsPage from './pages/BudgetsPage';
 import AddBudgetPage from './pages/AddBudgetPage';
 import AuthPage from './pages/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import TestExpenses from './pages/TestExpenses';
 
 export const routes = (
   setIsLoggedIn: (val: boolean) => void,
@@ -12,6 +13,10 @@ export const routes = (
   {
     path: '/',
     element: <HomePage />,
+  },
+  {
+    path: '/test-expenses',
+    element: <TestExpenses />,
   },
   {
     path: '/budgets',
