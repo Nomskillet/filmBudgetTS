@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClipLoader from 'react-spinners/ClipLoader';
-// import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { Expense } from '../store/expenseSlice';
 import type { Budget } from '../store/budgetSlice';
 import {
@@ -23,8 +22,6 @@ import ExpensesModal from '../components/ExpensesModal';
 import AddExpenseModal from '../components/AddExpenseModal';
 
 function BudgetsPage() {
-  // const dispatch = useAppDispatch();
-
   const {
     data: budgets = [],
     isLoading: loading,
@@ -39,8 +36,6 @@ function BudgetsPage() {
 
   const [updateBudget] = useUpdateBudgetMutation();
   const [deleteBudget] = useDeleteBudgetMutation();
-
-  // const expenseState = useAppSelector((state) => state.expense);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState({
