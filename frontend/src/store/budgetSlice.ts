@@ -9,6 +9,8 @@ export interface Budget {
   spent: number;
   remaining: number;
   created_at: string;
+  owner?: string;
+  responsible?: string;
 }
 
 interface BudgetState {

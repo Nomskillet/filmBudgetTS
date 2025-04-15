@@ -22,12 +22,19 @@ export const budgetApi = createApi({
     }),
     addBudget: builder.mutation<
       void,
-      { budgets: { title: string; budget: number }[] }
+      {
+        budgets: {
+          title: string;
+          budget: number;
+          owner?: string;
+          responsible?: string;
+        }[];
+      }
     >({
       query: (data) => ({
         url: '/budget',
         method: 'POST',
-        body: data, // send { budgets: [...] }
+        body: data,
       }),
       invalidatesTags: ['Budgets'],
     }),

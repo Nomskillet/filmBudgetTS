@@ -62,7 +62,12 @@ const addBudgets = (req, res, next) =>
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    const budgets = req.body.budgets;
+    const budgets = req.body.budgets.map((budget) => ({
+      title: budget.title,
+      budget: budget.budget,
+      owner: budget.owner || '',
+      responsible: budget.responsible || '',
+    }));
     if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
       res.status(400).json({ error: 'Invalid or missing budgets array' });
       return;
@@ -94,7 +99,9 @@ const updateBudget = (req, res, next) =>
       Number(id),
       title,
       budget,
-      existingBudget.spent, // Keep the current spent value
+      existingBudget.spent,
+      req.body.owner || '',
+      req.body.responsible || '',
       userId
     );
     if (!updatedBudget) {

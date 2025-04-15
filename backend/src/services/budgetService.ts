@@ -13,17 +13,23 @@ export interface Budget {
 export const getBudgetsFromDB = (userId: number) =>
   pool
     .query<Budget>(
-      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at 
-       FROM budgets 
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible
+      FROM budgets 
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+`,
       [userId]
     )
     .then((result) => result.rows);
 
 // Add multiple budgets for a specific user
 export const addBudgetsToDB = async (
-  budgets: { title: string; budget: number }[],
+  budgets: {
+    title: string;
+    budget: number;
+    owner?: string;
+    responsible?: string;
+  }[],
   userId: number
 ) => {
   const client = await pool.connect();
@@ -33,8 +39,15 @@ export const addBudgetsToDB = async (
 
     for (const budget of budgets) {
       await client.query(
-        'INSERT INTO budgets (title, budget, spent, user_id) VALUES ($1, $2, 0, $3)',
-        [budget.title, budget.budget, userId]
+        `INSERT INTO budgets (title, budget, spent, user_id, owner, responsible) 
+         VALUES ($1, $2, 0, $3, $4, $5)`,
+        [
+          budget.title,
+          budget.budget,
+          userId,
+          budget.owner || null,
+          budget.responsible || null,
+        ]
       );
     }
 
@@ -53,14 +66,16 @@ export const updateBudgetInDB = async (
   title: string,
   budget: number,
   spent: number,
+  owner: string,
+  responsible: string,
   userId: number
 ) => {
   const result = await pool.query<Budget>(
     `UPDATE budgets 
-     SET title = $1, budget = $2, spent = $3 
-     WHERE id = $4 AND user_id = $5
-     RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at`,
-    [title, budget, spent, id, userId]
+     SET title = $1, budget = $2, spent = $3, owner = $4, responsible = $5
+     WHERE id = $6 AND user_id = $7
+     RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible`,
+    [title, budget, spent, owner, responsible, id, userId]
   );
 
   return result.rows[0];
@@ -81,11 +96,11 @@ export const deleteBudgetFromDB = (id: number, userId: number) =>
 export const getBudgetItemsFromDB = (budgetId: number, userId: number) =>
   pool
     .query(
-      `SELECT id, budget_id, description, amount, created_at 
-       FROM expenses 
-       WHERE budget_id = $1 
-       AND budget_id IN (SELECT id FROM budgets WHERE user_id = $2) 
-       ORDER BY created_at DESC`,
+      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible
+      FROM budgets 
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+`,
       [budgetId, userId]
     )
     .then((result) => {

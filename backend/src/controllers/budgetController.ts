@@ -36,7 +36,13 @@ export const addBudgets = async (
     return;
   }
 
-  const budgets = req.body.budgets;
+  const budgets = req.body.budgets.map((budget: any) => ({
+    title: budget.title,
+    budget: budget.budget,
+    owner: budget.owner || '',
+    responsible: budget.responsible || '',
+  }));
+
   if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
     res.status(400).json({ error: 'Invalid or missing budgets array' });
     return;
@@ -75,7 +81,9 @@ export const updateBudget = async (
     Number(id),
     title,
     budget,
-    existingBudget.spent, // Keep the current spent value
+    existingBudget.spent,
+    req.body.owner || '',
+    req.body.responsible || '',
     userId
   );
 

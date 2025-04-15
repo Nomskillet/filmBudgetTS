@@ -10,6 +10,8 @@ interface BudgetCardProps {
     title: string;
     budget: string;
     spent: string;
+    owner: string;
+    responsible: string;
   };
   onEditClick: (budget: Budget, dynamicSpent: number) => void;
   onDeleteClick: (budgetId: number) => void;
@@ -60,6 +62,26 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
             }
             className="p-2 border rounded w-full"
           />
+          <label className="block text-gray-700 font-semibold mt-4">
+            Owner:
+          </label>
+          <input
+            type="text"
+            value={editData.owner}
+            onChange={(e) => onEditChange('owner', e.target.value)}
+            className="p-2 border rounded w-full"
+          />
+
+          <label className="block text-gray-700 font-semibold mt-4">
+            Responsible:
+          </label>
+          <input
+            type="text"
+            value={editData.responsible}
+            onChange={(e) => onEditChange('responsible', e.target.value)}
+            className="p-2 border rounded w-full"
+          />
+
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => onSaveEdit(budget.id)}
@@ -83,6 +105,11 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
           <p className="text-gray-600">
             Budget: ${Number(budget.budget).toFixed(2)}
           </p>
+          <p className="text-gray-600">Owner: {budget.owner || '—'}</p>
+          <p className="text-gray-600">
+            Responsible: {budget.responsible || '—'}
+          </p>
+
           <p className="text-gray-600">Spent: ${dynamicSpent.toFixed(2)}</p>
           <p
             className={`text-gray-600 ${

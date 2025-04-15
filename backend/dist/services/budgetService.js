@@ -52,10 +52,11 @@ const db_1 = __importDefault(require('../db'));
 const getBudgetsFromDB = (userId) =>
   db_1.default
     .query(
-      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at 
-       FROM budgets 
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible
+      FROM budgets 
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+`,
       [userId]
     )
     .then((result) => result.rows);
@@ -68,8 +69,15 @@ const addBudgetsToDB = (budgets, userId) =>
       yield client.query('BEGIN');
       for (const budget of budgets) {
         yield client.query(
-          'INSERT INTO budgets (title, budget, spent, user_id) VALUES ($1, $2, 0, $3)',
-          [budget.title, budget.budget, userId]
+          `INSERT INTO budgets (title, budget, spent, user_id, owner, responsible) 
+         VALUES ($1, $2, 0, $3, $4, $5)`,
+          [
+            budget.title,
+            budget.budget,
+            userId,
+            budget.owner || null,
+            budget.responsible || null,
+          ]
         );
       }
       yield client.query('COMMIT');
@@ -82,14 +90,22 @@ const addBudgetsToDB = (budgets, userId) =>
   });
 exports.addBudgetsToDB = addBudgetsToDB;
 // Update budget (title, budget, spent) for a user
-const updateBudgetInDB = (id, title, budget, spent, userId) =>
+const updateBudgetInDB = (
+  id,
+  title,
+  budget,
+  spent,
+  owner,
+  responsible,
+  userId
+) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const result = yield db_1.default.query(
       `UPDATE budgets 
-     SET title = $1, budget = $2, spent = $3 
-     WHERE id = $4 AND user_id = $5
-     RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at`,
-      [title, budget, spent, id, userId]
+     SET title = $1, budget = $2, spent = $3, owner = $4, responsible = $5
+     WHERE id = $6 AND user_id = $7
+     RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible`,
+      [title, budget, spent, owner, responsible, id, userId]
     );
     return result.rows[0];
   });
@@ -109,11 +125,11 @@ exports.deleteBudgetFromDB = deleteBudgetFromDB;
 const getBudgetItemsFromDB = (budgetId, userId) =>
   db_1.default
     .query(
-      `SELECT id, budget_id, description, amount, created_at 
-       FROM expenses 
-       WHERE budget_id = $1 
-       AND budget_id IN (SELECT id FROM budgets WHERE user_id = $2) 
-       ORDER BY created_at DESC`,
+      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible
+      FROM budgets 
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+`,
       [budgetId, userId]
     )
     .then((result) => {

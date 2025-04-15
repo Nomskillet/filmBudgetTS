@@ -13,6 +13,8 @@ const budgetSchema = z.object({
       budget: z
         .number({ invalid_type_error: 'Budget must be a number' })
         .positive('Budget must be greater than 0'),
+      owner: z.string().optional(),
+      responsible: z.string().optional(),
     })
   ),
 });
@@ -33,7 +35,7 @@ function BudgetForm() {
   } = useForm<BudgetFormInputs>({
     resolver: zodResolver(budgetSchema),
     defaultValues: {
-      budgets: [{ title: '', budget: 0 }],
+      budgets: [{ title: '', budget: 0, owner: '', responsible: '' }],
     },
   });
 
@@ -95,6 +97,22 @@ function BudgetForm() {
                 {errors.budgets[index]?.budget?.message as string}
               </p>
             )}
+
+            {/* Owner */}
+            <label className="block mt-4 mb-2">Owner</label>
+            <input
+              type="text"
+              {...register(`budgets.${index}.owner` as const)}
+              className="w-full p-2 border rounded"
+            />
+
+            {/* Responsible */}
+            <label className="block mt-4 mb-2">Responsible</label>
+            <input
+              type="text"
+              {...register(`budgets.${index}.responsible` as const)}
+              className="w-full p-2 border rounded"
+            />
 
             <button
               type="button"

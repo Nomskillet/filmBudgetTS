@@ -18,6 +18,14 @@ function SearchResultCard({
   return (
     <li className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition">
       <h2 className="text-xl font-bold text-purple-700 mb-2">{budget.title}</h2>
+      <p className="text-gray-700">
+        <span className="font-semibold">Owner:</span> {budget.owner || '—'}
+      </p>
+      <p className="text-gray-700 mb-2">
+        <span className="font-semibold">Responsible:</span>{' '}
+        {budget.responsible || '—'}
+      </p>
+
       <ul className="space-y-2">
         {expenses.map((expense) => (
           <li

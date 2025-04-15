@@ -42,6 +42,8 @@ function BudgetsPage() {
     title: '',
     budget: '0',
     spent: '0',
+    owner: '',
+    responsible: '',
   });
   const [search, setSearch] = useState<string>('');
 
@@ -109,7 +111,19 @@ function BudgetsPage() {
           .toLowerCase()
           .includes(lowercaseSearch);
 
-        if (budgetTitleMatch || matchingExpenses.length > 0) {
+        const budgetOwnerMatch = budget.owner
+          ?.toLowerCase()
+          .includes(lowercaseSearch);
+        const budgetResponsibleMatch = budget.responsible
+          ?.toLowerCase()
+          .includes(lowercaseSearch);
+
+        if (
+          budgetTitleMatch ||
+          budgetOwnerMatch ||
+          budgetResponsibleMatch ||
+          matchingExpenses.length > 0
+        ) {
           return {
             budget,
             expenses: budgetTitleMatch
@@ -252,6 +266,8 @@ function BudgetsPage() {
       title: editData.title,
       budget: parseFloat(editData.budget.replace(/^0+(?!$)/, '')) || 0,
       spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0,
+      owner: editData.owner,
+      responsible: editData.responsible,
     };
 
     updateBudget({ id, updatedData: requestBody })
@@ -343,6 +359,8 @@ function BudgetsPage() {
                       title: budget.title,
                       budget: budget.budget.toString(),
                       spent: dynamicSpent.toString(),
+                      owner: budget.owner || '',
+                      responsible: budget.responsible || '',
                     });
                   }}
                   onDeleteClick={handleDelete}
