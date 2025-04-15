@@ -21,11 +21,18 @@ const Navbar: React.FC<{ isLoggedIn: boolean; onLogout: () => void }> = ({
         </li>
 
         {isLoggedIn && (
-          <li>
-            <Link to="/budgets" className={getActiveClass('/budgets')}>
-              Budgets
-            </Link>
-          </li>
+          <>
+            <li>
+              <Link to="/budgets" className={getActiveClass('/budgets')}>
+                Budgets
+              </Link>
+            </li>
+            <li>
+              <Link to="/stats" className={getActiveClass('/stats')}>
+                Stats
+              </Link>
+            </li>
+          </>
         )}
 
         {!isLoggedIn ? (

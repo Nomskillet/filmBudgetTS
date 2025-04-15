@@ -4,6 +4,7 @@ import BudgetsPage from './pages/BudgetsPage';
 import AddBudgetPage from './pages/AddBudgetPage';
 import AuthPage from './pages/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import StatsPage from './pages/StatsPage';
 
 export const routes = (
   setIsLoggedIn: (val: boolean) => void,
@@ -19,6 +20,14 @@ export const routes = (
     element: (
       <ProtectedRoute isLoggedIn={isLoggedIn}>
         <BudgetsPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/stats',
+    element: (
+      <ProtectedRoute isLoggedIn={isLoggedIn}>
+        <StatsPage />
       </ProtectedRoute>
     ),
   },
