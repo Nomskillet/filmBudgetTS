@@ -44,6 +44,7 @@ function BudgetsPage() {
     spent: '0',
     owner: '',
     responsible: '',
+    stage: '',
   });
   const [search, setSearch] = useState<string>('');
 
@@ -158,8 +159,8 @@ function BudgetsPage() {
           owner: newExpense.owner,
           responsible: newExpense.responsible,
           place_of_purchase: newExpense.place_of_purchase,
-          purchase_date: editExpenseData.purchase_date
-            ? new Date(editExpenseData.purchase_date).toISOString()
+          purchase_date: newExpense.purchase_date
+            ? new Date(newExpense.purchase_date).toISOString()
             : undefined,
 
           note: newExpense.note,
@@ -268,6 +269,7 @@ function BudgetsPage() {
       spent: parseFloat(editData.spent.replace(/^0+(?!$)/, '')) || 0,
       owner: editData.owner,
       responsible: editData.responsible,
+      stage: editData.stage,
     };
 
     updateBudget({ id, updatedData: requestBody })
@@ -361,6 +363,7 @@ function BudgetsPage() {
                       spent: dynamicSpent.toString(),
                       owner: budget.owner || '',
                       responsible: budget.responsible || '',
+                      stage: budget.stage || '',
                     });
                   }}
                   onDeleteClick={handleDelete}

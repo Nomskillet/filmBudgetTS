@@ -13,11 +13,10 @@ export interface Budget {
 export const getBudgetsFromDB = (userId: number) =>
   pool
     .query<Budget>(
-      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible
-      FROM budgets 
-      WHERE user_id = $1
-      ORDER BY created_at DESC
-`,
+      `SELECT id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible, stage
+ FROM budgets 
+ WHERE user_id = $1
+ ORDER BY created_at DESC`,
       [userId]
     )
     .then((result) => result.rows);
@@ -29,6 +28,7 @@ export const addBudgetsToDB = async (
     budget: number;
     owner?: string;
     responsible?: string;
+    stage?: string;
   }[],
   userId: number
 ) => {
@@ -39,14 +39,15 @@ export const addBudgetsToDB = async (
 
     for (const budget of budgets) {
       await client.query(
-        `INSERT INTO budgets (title, budget, spent, user_id, owner, responsible) 
-         VALUES ($1, $2, 0, $3, $4, $5)`,
+        `INSERT INTO budgets (title, budget, spent, user_id, owner, responsible, stage) 
+         VALUES ($1, $2, 0, $3, $4, $5, $6)`,
         [
           budget.title,
           budget.budget,
           userId,
           budget.owner || null,
           budget.responsible || null,
+          budget.stage || 'pre-production',
         ]
       );
     }
@@ -68,14 +69,15 @@ export const updateBudgetInDB = async (
   spent: number,
   owner: string,
   responsible: string,
+  stage: string,
   userId: number
 ) => {
   const result = await pool.query<Budget>(
     `UPDATE budgets 
-     SET title = $1, budget = $2, spent = $3, owner = $4, responsible = $5
-     WHERE id = $6 AND user_id = $7
-     RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible`,
-    [title, budget, spent, owner, responsible, id, userId]
+     SET title = $1, budget = $2, spent = $3, owner = $4, responsible = $5, stage = $6
+     WHERE id = $7 AND user_id = $8
+     RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at, owner, responsible, stage`,
+    [title, budget, spent, owner, responsible, stage, id, userId]
   );
 
   return result.rows[0];
@@ -129,7 +131,7 @@ export const addExpenseToDB = (
       owner,
       responsible,
       place_of_purchase,
-      purchase_date,
+      purchase_date ? new Date(purchase_date).toISOString() : null,
       note,
     ]
   );
@@ -174,7 +176,7 @@ export const updateExpenseInDB = async (
       owner,
       responsible,
       place_of_purchase,
-      purchase_date,
+      purchase_date ? new Date(purchase_date).toISOString() : null,
       note,
       expenseId,
     ]

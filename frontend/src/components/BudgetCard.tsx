@@ -12,6 +12,7 @@ interface BudgetCardProps {
     spent: string;
     owner: string;
     responsible: string;
+    stage: string;
   };
   onEditClick: (budget: Budget, dynamicSpent: number) => void;
   onDeleteClick: (budgetId: number) => void;
@@ -82,6 +83,19 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
             className="p-2 border rounded w-full"
           />
 
+          <label className="block text-gray-700 font-semibold mt-4">
+            Stage:
+          </label>
+          <select
+            value={editData.stage}
+            onChange={(e) => onEditChange('stage', e.target.value)}
+            className="p-2 border rounded w-full"
+          >
+            <option value="pre-production">Pre-production</option>
+            <option value="production">Production</option>
+            <option value="post-production">Post-production</option>
+          </select>
+
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => onSaveEdit(budget.id)}
@@ -108,6 +122,13 @@ const BudgetCard: React.FC<BudgetCardProps> = ({
           <p className="text-gray-600">Owner: {budget.owner || '—'}</p>
           <p className="text-gray-600">
             Responsible: {budget.responsible || '—'}
+          </p>
+
+          <p className="text-gray-600">
+            Stage:{' '}
+            {budget.stage
+              ? budget.stage.charAt(0).toUpperCase() + budget.stage.slice(1)
+              : '—'}
           </p>
 
           <p className="text-gray-600">Spent: ${dynamicSpent.toFixed(2)}</p>

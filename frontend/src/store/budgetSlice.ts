@@ -11,6 +11,7 @@ export interface Budget {
   created_at: string;
   owner?: string;
   responsible?: string;
+  stage?: string;
 }
 
 interface BudgetState {

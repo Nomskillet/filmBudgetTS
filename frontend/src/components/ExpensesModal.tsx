@@ -152,14 +152,14 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
                           Place: {expense.place_of_purchase}
                         </p>
                       )}
-                      {expense.purchase_date && (
-                        <p className="text-sm text-gray-700">
-                          Date:{' '}
-                          {new Date(
-                            Number(expense.purchase_date)
-                          ).toLocaleDateString()}
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-700">
+                        Date:{' '}
+                        {expense.purchase_date &&
+                        !isNaN(new Date(expense.purchase_date).getTime())
+                          ? new Date(expense.purchase_date).toLocaleDateString()
+                          : '—'}
+                      </p>
+
                       {expense.note && (
                         <p className="text-sm text-gray-600 italic">
                           Note: {expense.note}

@@ -67,6 +67,7 @@ const addBudgets = (req, res, next) =>
       budget: budget.budget,
       owner: budget.owner || '',
       responsible: budget.responsible || '',
+      stage: budget.stage || 'pre-production',
     }));
     if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
       res.status(400).json({ error: 'Invalid or missing budgets array' });
@@ -102,6 +103,7 @@ const updateBudget = (req, res, next) =>
       existingBudget.spent,
       req.body.owner || '',
       req.body.responsible || '',
+      req.body.stage || 'pre-production',
       userId
     );
     if (!updatedBudget) {

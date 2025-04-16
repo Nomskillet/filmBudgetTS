@@ -41,6 +41,7 @@ export const addBudgets = async (
     budget: budget.budget,
     owner: budget.owner || '',
     responsible: budget.responsible || '',
+    stage: budget.stage || 'pre-production',
   }));
 
   if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
@@ -84,6 +85,7 @@ export const updateBudget = async (
     existingBudget.spent,
     req.body.owner || '',
     req.body.responsible || '',
+    req.body.stage || 'pre-production',
     userId
   );
 
