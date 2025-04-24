@@ -5,6 +5,8 @@ import AddBudgetPage from './pages/AddBudgetPage';
 import AuthPage from './pages/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import StatsPage from './pages/StatsPage';
+import OCRTester from './pages/OCRTester';
+import UploadPage from './pages/UploadPage';
 
 export const routes = (
   setIsLoggedIn: (val: boolean) => void,
@@ -39,6 +41,23 @@ export const routes = (
       </ProtectedRoute>
     ),
   },
+  {
+    path: '/ocr-test',
+    element: (
+      <ProtectedRoute isLoggedIn={isLoggedIn}>
+        <OCRTester />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/upload-test',
+    element: (
+      <ProtectedRoute isLoggedIn={isLoggedIn}>
+        <UploadPage />
+      </ProtectedRoute>
+    ),
+  },
+
   {
     path: '/signup',
     element: <AuthPage initialMode="signup" setIsLoggedIn={setIsLoggedIn} />,

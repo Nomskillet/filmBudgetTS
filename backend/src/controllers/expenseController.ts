@@ -167,7 +167,9 @@ export const deleteExpense = catchAsync(async (req: Request, res: Response) => {
 
   const { amount, budget_id } = expenseResult.rows[0];
 
-  await pool.query(`DELETE FROM expenses WHERE id = $1`, [expenseId]);
+  await pool.query(`UPDATE expenses SET deleted = TRUE WHERE id = $1`, [
+    expenseId,
+  ]);
 
   await pool.query(`UPDATE budgets SET spent = spent - $1 WHERE id = $2`, [
     amount,

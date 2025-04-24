@@ -38,6 +38,8 @@ function AuthPage({ initialMode, setIsLoggedIn }: AuthPageProps) {
 
       if (mode === 'login') {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userEmail', data.user.email);
         setIsLoggedIn(true);
         setTimeout(() => navigate('/budgets'), 1000);
       } else {

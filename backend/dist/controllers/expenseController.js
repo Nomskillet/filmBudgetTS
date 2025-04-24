@@ -189,7 +189,10 @@ exports.deleteExpense = (0, catchAsync_1.default)((req, res) =>
       return;
     }
     const { amount, budget_id } = expenseResult.rows[0];
-    yield db_1.default.query(`DELETE FROM expenses WHERE id = $1`, [expenseId]);
+    yield db_1.default.query(
+      `UPDATE expenses SET deleted = TRUE WHERE id = $1`,
+      [expenseId]
+    );
     yield db_1.default.query(
       `UPDATE budgets SET spent = spent - $1 WHERE id = $2`,
       [amount, budget_id]

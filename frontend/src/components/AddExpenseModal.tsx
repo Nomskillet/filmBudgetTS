@@ -23,6 +23,12 @@ interface AddExpenseModalProps {
   >;
   handleAddExpense: () => void;
   closeModal: () => void;
+
+  // 🆕 OCR-related props
+  file: File | null;
+  setFile: React.Dispatch<React.SetStateAction<File | null>>;
+  handleUploadAndOCR: () => void;
+  ocrLoading: boolean;
 }
 
 const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
@@ -30,6 +36,10 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   setNewExpense,
   handleAddExpense,
   closeModal,
+  file,
+  setFile,
+  handleUploadAndOCR,
+  ocrLoading,
 }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
@@ -108,6 +118,26 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             setNewExpense({ ...newExpense, note: e.target.value })
           }
         />
+
+        {/* 🆕 OCR: File input + button */}
+        <input
+          type="file"
+          accept="image/*"
+          className="border p-2 w-full mb-2 rounded"
+          onChange={(e) => {
+            if (e.target.files?.[0]) {
+              setFile(e.target.files[0]);
+            }
+          }}
+        />
+        <button
+          className="bg-purple-600 text-white px-4 py-2 rounded w-full mb-2 disabled:opacity-50"
+          disabled={ocrLoading || !file}
+          onClick={handleUploadAndOCR}
+        >
+          {ocrLoading ? 'Extracting Text...' : 'Run OCR on Receipt'}
+        </button>
+
         <div className="flex justify-end space-x-2 mt-4">
           <button
             className="px-4 py-2 bg-gray-400 text-white rounded"

@@ -66,7 +66,7 @@ exports.registerUser = (0, catchAsync_1.default)((req, res) =>
     const hashedPassword = yield bcrypt_1.default.hash(password, 10);
     // Insert user into the database
     const result = yield db_1.default.query(
-      `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email`,
+      `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, role`,
       [email, hashedPassword]
     );
     const user = result.rows[0];
@@ -78,7 +78,10 @@ exports.registerUser = (0, catchAsync_1.default)((req, res) =>
         expiresIn: '24h',
       }
     );
-    res.status(201).json({ token, user: { id: user.id, email: user.email } });
+    res.status(201).json({
+      token,
+      user: { id: user.id, email: user.email, role: user.role },
+    });
   })
 );
 // Login User
@@ -92,7 +95,7 @@ exports.loginUser = (0, catchAsync_1.default)((req, res) =>
     }
     // Get user from database
     const userResult = yield db_1.default.query(
-      'SELECT id, email, password_hash FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, role FROM users WHERE email = $1',
       [email]
     );
     const user = userResult.rows[0];
@@ -111,12 +114,13 @@ exports.loginUser = (0, catchAsync_1.default)((req, res) =>
     }
     // Generate JWT token
     const token = jsonwebtoken_1.default.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role },
       JWT_SECRET,
-      {
-        expiresIn: '24h',
-      }
+      { expiresIn: '24h' }
     );
-    res.status(200).json({ token, user: { id: user.id, email: user.email } });
+    res.status(200).json({
+      token,
+      user: { id: user.id, email: user.email, role: user.role },
+    });
   })
 );

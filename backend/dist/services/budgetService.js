@@ -170,7 +170,7 @@ const getExpensesFromDB = (budgetId) =>
     .query(
       `SELECT id, description, amount, created_at, owner, responsible, place_of_purchase, purchase_date, note
        FROM expenses 
-       WHERE budget_id = $1 
+       WHERE budget_id = $1 AND deleted = FALSE
        ORDER BY created_at DESC`,
       [budgetId]
     )

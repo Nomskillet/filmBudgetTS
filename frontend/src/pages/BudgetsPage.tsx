@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClipLoader from 'react-spinners/ClipLoader';
+import api from '../utils/axios';
 import type { Expense } from '../store/expenseSlice';
 import type { Budget } from '../store/budgetSlice';
 import {
@@ -82,6 +83,9 @@ function BudgetsPage() {
   const [viewExpensesModalBudget, setViewExpensesModalBudget] =
     useState<Budget | null>(null);
 
+  const [file, setFile] = useState<File | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+
   useEffect(() => {
     if (!search.trim()) {
       setFilteredExpenseGroups([]);
@@ -151,6 +155,19 @@ function BudgetsPage() {
     if (!showAddExpenseModal) return;
 
     try {
+      console.log('Submitting expense:', {
+        budgetId: showAddExpenseModal,
+        description: newExpense.description,
+        amount: parseFloat(newExpense.amount),
+        owner: newExpense.owner,
+        responsible: newExpense.responsible,
+        place_of_purchase: newExpense.place_of_purchase,
+        purchase_date: newExpense.purchase_date
+          ? new Date(newExpense.purchase_date).toISOString()
+          : undefined,
+        note: newExpense.note,
+      });
+
       await addExpense({
         budgetId: showAddExpenseModal,
         expenseData: {
@@ -162,12 +179,11 @@ function BudgetsPage() {
           purchase_date: newExpense.purchase_date
             ? new Date(newExpense.purchase_date).toISOString()
             : undefined,
-
           note: newExpense.note,
         },
       }).unwrap();
-      refetch();
 
+      refetch();
       toast.success('Expense added successfully!');
       setNewExpense({
         description: '',
@@ -178,7 +194,6 @@ function BudgetsPage() {
         purchase_date: undefined,
         note: '',
       });
-
       setShowAddExpenseModal(null);
     } catch (err) {
       console.error('Add expense error:', err);
@@ -262,6 +277,42 @@ function BudgetsPage() {
     }
   };
 
+  const handleUploadAndOCR = async () => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      setOcrLoading(true);
+
+      // Step 1: Upload the image
+      const uploadResponse = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const filePath = uploadResponse.data.filePath;
+
+      // Step 2: Run OCR
+      const ocrResponse = await api.post('/upload/ocr', { filePath });
+
+      const ocrText = ocrResponse.data.ocr_text;
+
+      // Step 3: Add the OCR result to the note field
+      setNewExpense((prev) => ({
+        ...prev,
+        note: ocrText,
+      }));
+
+      toast.success('OCR completed and note updated!');
+    } catch (err) {
+      console.error('OCR failed:', err);
+      toast.error('Failed to run OCR');
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
   const handleUpdate = (id: number) => {
     const requestBody = {
       title: editData.title,
@@ -338,6 +389,10 @@ function BudgetsPage() {
           setNewExpense={setNewExpense}
           handleAddExpense={handleAddExpense}
           closeModal={() => setShowAddExpenseModal(null)}
+          file={file}
+          setFile={setFile}
+          handleUploadAndOCR={handleUploadAndOCR}
+          ocrLoading={ocrLoading}
         />
       )}
 

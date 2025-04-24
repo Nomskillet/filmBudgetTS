@@ -4,6 +4,7 @@ import cors from 'cors';
 import budgetRoutes from './routes/budgetRoutes';
 import authRoutes from './routes/authRoutes';
 import expenseRoutes from './routes/expenseRoutes';
+import uploadRoutes from './routes/uploadRoutes';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use('/api', budgetRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', expenseRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.get('/', (req, res) => {
   res.send('Film Budget API is running!');

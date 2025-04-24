@@ -30,7 +30,7 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
 
   // Insert user into the database
   const result = await pool.query(
-    `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email`,
+    `INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, role`,
     [email, hashedPassword]
   );
 
@@ -41,7 +41,9 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
     expiresIn: '24h',
   });
 
-  res.status(201).json({ token, user: { id: user.id, email: user.email } });
+  res
+    .status(201)
+    .json({ token, user: { id: user.id, email: user.email, role: user.role } });
 });
 
 // Login User
@@ -56,7 +58,8 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
 
   // Get user from database
   const userResult = await pool.query(
-    'SELECT id, email, password_hash FROM users WHERE email = $1',
+    'SELECT id, email, password_hash, role FROM users WHERE email = $1',
+
     [email]
   );
 
@@ -75,9 +78,13 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Generate JWT token
-  const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
-    expiresIn: '24h',
-  });
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
 
-  res.status(200).json({ token, user: { id: user.id, email: user.email } });
+  res
+    .status(200)
+    .json({ token, user: { id: user.id, email: user.email, role: user.role } });
 });
