@@ -15,6 +15,7 @@ export interface Expense {
   place_of_purchase?: string;
   purchase_date?: string;
   note?: string;
+  deleted?: boolean;
 }
 
 interface ExpenseState {

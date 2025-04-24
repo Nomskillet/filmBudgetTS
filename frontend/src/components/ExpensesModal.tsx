@@ -53,7 +53,7 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
         </h2>
         <ul className="space-y-4">
           {allExpenses
-            .filter((e) => e.budget_id === budget.id)
+            .filter((e) => e.budget_id === budget.id && !e.deleted)
             .map((expense) => (
               <li key={expense.id} className="border rounded p-4 bg-gray-50">
                 {editingExpenseId === expense.id ? (

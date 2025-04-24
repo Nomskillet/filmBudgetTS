@@ -97,7 +97,7 @@ function BudgetsPage() {
     const groups = budgets
       .map((budget) => {
         const allExpensesForBudget = allExpenses.filter(
-          (exp) => exp.budget_id === budget.id
+          (exp) => exp.budget_id === budget.id && !exp.deleted
         );
 
         const matchingExpenses = allExpensesForBudget.filter((expense) => {
@@ -155,19 +155,6 @@ function BudgetsPage() {
     if (!showAddExpenseModal) return;
 
     try {
-      console.log('Submitting expense:', {
-        budgetId: showAddExpenseModal,
-        description: newExpense.description,
-        amount: parseFloat(newExpense.amount),
-        owner: newExpense.owner,
-        responsible: newExpense.responsible,
-        place_of_purchase: newExpense.place_of_purchase,
-        purchase_date: newExpense.purchase_date
-          ? new Date(newExpense.purchase_date).toISOString()
-          : undefined,
-        note: newExpense.note,
-      });
-
       await addExpense({
         budgetId: showAddExpenseModal,
         expenseData: {
@@ -400,7 +387,7 @@ function BudgetsPage() {
         {search.trim() === ''
           ? budgets.map((budget) => {
               const expenses = allExpenses.filter(
-                (exp) => exp.budget_id === budget.id
+                (exp) => exp.budget_id === budget.id && !exp.deleted
               );
 
               return (
