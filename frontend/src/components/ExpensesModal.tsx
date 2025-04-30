@@ -14,6 +14,7 @@ interface ExpensesModalProps {
     place_of_purchase: string;
     purchase_date: number | undefined;
     note: string;
+    receipt_image_url: string;
   };
   setEditExpenseData: React.Dispatch<
     React.SetStateAction<{
@@ -24,6 +25,7 @@ interface ExpensesModalProps {
       place_of_purchase: string;
       purchase_date: number | undefined;
       note: string;
+      receipt_image_url: string;
     }>
   >;
   setEditingExpenseId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -161,9 +163,31 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
                       </p>
 
                       {expense.note && (
-                        <p className="text-sm text-gray-600 italic">
-                          Note: {expense.note}
-                        </p>
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 italic mb-1">
+                            Note:
+                          </p>
+                          <p className="text-sm text-gray-700">
+                            {expense.note}
+                          </p>
+                        </div>
+                      )}
+
+                      {expense.receipt_image_url && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-600 italic mb-1">
+                            Receipt Image:
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Filename: {expense.receipt_image_url}
+                          </p>
+
+                          <img
+                            src={`http://localhost:5001/uploads/${expense.receipt_image_url}`}
+                            alt="Receipt"
+                            className="w-full max-w-xs border rounded"
+                          />
+                        </div>
                       )}
                     </div>
                     <div className="flex flex-col gap-2">

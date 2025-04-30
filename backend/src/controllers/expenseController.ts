@@ -21,6 +21,7 @@ export const addExpense = catchAsync(async (req: Request, res: Response) => {
     place_of_purchase,
     purchase_date,
     note,
+    receipt_image_url,
   } = req.body;
 
   if (!userId) {
@@ -42,7 +43,8 @@ export const addExpense = catchAsync(async (req: Request, res: Response) => {
     responsible,
     place_of_purchase,
     purchase_date,
-    note
+    note,
+    receipt_image_url
   );
 
   await pool.query(`UPDATE budgets SET spent = spent + $1 WHERE id = $2`, [

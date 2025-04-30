@@ -9,12 +9,12 @@ export interface Expense {
   description: string;
   amount: number;
   created_at: string;
-
   owner?: string;
   responsible?: string;
   place_of_purchase?: string;
   purchase_date?: string;
   note?: string;
+  receipt_image_url?: string;
   deleted?: boolean;
 }
 

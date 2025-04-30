@@ -118,12 +118,14 @@ export const addExpenseToDB = (
   responsible: string,
   place_of_purchase: string,
   purchase_date: number, // epoch timestamp
-  note: string
+  note: string,
+  receipt_image_url: string
 ) =>
   pool.query(
-    `INSERT INTO expenses 
-      (budget_id, description, amount, owner, responsible, place_of_purchase, purchase_date, note) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    `INSERT INTO expenses (
+  budget_id, description, amount, owner, responsible, place_of_purchase, purchase_date, note, receipt_image_url
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       budgetId,
       description,
@@ -133,6 +135,7 @@ export const addExpenseToDB = (
       place_of_purchase,
       purchase_date ? new Date(purchase_date).toISOString() : null,
       note,
+      receipt_image_url,
     ]
   );
 

@@ -9,6 +9,7 @@ interface AddExpenseModalProps {
     place_of_purchase: string;
     purchase_date: number | undefined;
     note: string;
+    receipt_image_url: string;
   };
   setNewExpense: React.Dispatch<
     React.SetStateAction<{
@@ -19,6 +20,7 @@ interface AddExpenseModalProps {
       place_of_purchase: string;
       purchase_date: number | undefined;
       note: string;
+      receipt_image_url: string;
     }>
   >;
   handleAddExpense: () => void;

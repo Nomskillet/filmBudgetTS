@@ -5,6 +5,7 @@ import budgetRoutes from './routes/budgetRoutes';
 import authRoutes from './routes/authRoutes';
 import expenseRoutes from './routes/expenseRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import path from 'path';
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use('/api', budgetRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', expenseRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.get('/', (req, res) => {
   res.send('Film Budget API is running!');

@@ -62,7 +62,7 @@ const handleImageUpload = (req, res) => {
   }
   res.status(200).json({
     message: 'Image uploaded successfully',
-    filePath: req.file.path,
+    filePath: `/uploads/${req.file.filename}`,
   });
 };
 exports.handleImageUpload = handleImageUpload;

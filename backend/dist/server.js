@@ -12,6 +12,7 @@ const budgetRoutes_1 = __importDefault(require('./routes/budgetRoutes'));
 const authRoutes_1 = __importDefault(require('./routes/authRoutes'));
 const expenseRoutes_1 = __importDefault(require('./routes/expenseRoutes'));
 const uploadRoutes_1 = __importDefault(require('./routes/uploadRoutes'));
+const path_1 = __importDefault(require('path'));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
@@ -20,6 +21,10 @@ app.use('/api', budgetRoutes_1.default);
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api', expenseRoutes_1.default);
 app.use('/api/upload', uploadRoutes_1.default);
+app.use(
+  '/uploads',
+  express_1.default.static(path_1.default.join(__dirname, '..', 'uploads'))
+);
 app.get('/', (req, res) => {
   res.send('Film Budget API is running!');
 });

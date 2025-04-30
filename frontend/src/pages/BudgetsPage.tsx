@@ -61,6 +61,7 @@ function BudgetsPage() {
     place_of_purchase: '',
     purchase_date: undefined as number | undefined,
     note: '',
+    receipt_image_url: '',
   });
 
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
@@ -72,6 +73,7 @@ function BudgetsPage() {
     place_of_purchase: '',
     purchase_date: undefined as number | undefined,
     note: '',
+    receipt_image_url: '',
   });
 
   const [filteredExpenseGroups, setFilteredExpenseGroups] = useState<
@@ -155,6 +157,8 @@ function BudgetsPage() {
     if (!showAddExpenseModal) return;
 
     try {
+      const receiptImage = newExpense.receipt_image_url;
+
       await addExpense({
         budgetId: showAddExpenseModal,
         expenseData: {
@@ -167,6 +171,7 @@ function BudgetsPage() {
             ? new Date(newExpense.purchase_date).toISOString()
             : undefined,
           note: newExpense.note,
+          receipt_image_url: receiptImage, // ✅ ensure this is set
         },
       }).unwrap();
 
@@ -180,6 +185,7 @@ function BudgetsPage() {
         place_of_purchase: '',
         purchase_date: undefined,
         note: '',
+        receipt_image_url: '', // ✅ reset this
       });
       setShowAddExpenseModal(null);
     } catch (err) {
@@ -201,6 +207,7 @@ function BudgetsPage() {
         ? Number(expense.purchase_date)
         : undefined,
       note: expense.note || '',
+      receipt_image_url: expense.receipt_image_url || '',
     });
 
     // Only open the modal if it's not already open
@@ -279,6 +286,12 @@ function BudgetsPage() {
       });
 
       const filePath = uploadResponse.data.filePath;
+      const filename = filePath.split('/').pop();
+
+      setNewExpense((prev) => ({
+        ...prev,
+        receipt_image_url: filename || '',
+      }));
 
       // Step 2: Run OCR
       const ocrResponse = await api.post('/upload/ocr', { filePath });
@@ -288,7 +301,7 @@ function BudgetsPage() {
       // Step 3: Add the OCR result to the note field
       setNewExpense((prev) => ({
         ...prev,
-        note: ocrText,
+        note: `${prev.note ? prev.note + '\n' : ''}${ocrText}`,
       }));
 
       toast.success('OCR completed and note updated!');

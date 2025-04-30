@@ -61,6 +61,7 @@ exports.addExpense = (0, catchAsync_1.default)((req, res) =>
       place_of_purchase,
       purchase_date,
       note,
+      receipt_image_url,
     } = req.body;
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -79,7 +80,8 @@ exports.addExpense = (0, catchAsync_1.default)((req, res) =>
       responsible,
       place_of_purchase,
       purchase_date,
-      note
+      note,
+      receipt_image_url
     );
     yield db_1.default.query(
       `UPDATE budgets SET spent = spent + $1 WHERE id = $2`,
