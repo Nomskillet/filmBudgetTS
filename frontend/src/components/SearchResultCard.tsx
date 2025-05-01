@@ -55,7 +55,17 @@ function SearchResultCard({
                   Note: {expense.note}
                 </p>
               )}
+              {expense.receipt_image_url && (
+                <div className="mt-2">
+                  <img
+                    src={`http://localhost:5001/uploads/${expense.receipt_image_url}`}
+                    alt="Receipt"
+                    className="max-w-xs border rounded"
+                  />
+                </div>
+              )}
             </div>
+
             <div className="flex flex-col gap-2 ml-4">
               <button
                 onClick={() => onEditExpense(expense, budget.id)}

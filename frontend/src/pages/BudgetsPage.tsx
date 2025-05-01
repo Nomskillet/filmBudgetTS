@@ -298,9 +298,52 @@ function BudgetsPage() {
 
       const ocrText = ocrResponse.data.ocr_text;
 
-      // Step 3: Add the OCR result to the note field
+      // 🧠 Extract amount from "total" line
+      let extractedAmount = '';
+      const rawLines = ocrText.split('\n');
+      const normalizedLines = rawLines.map((line: string) =>
+        line.trim().toLowerCase()
+      );
+
+      // Try to find "total" first (excluding tax lines), fallback to "subtotal"
+      const totalLine =
+        normalizedLines.find(
+          (line: string) =>
+            line.includes('total') &&
+            !line.includes('subtotal') &&
+            !line.includes('tax') &&
+            !line.includes('number') &&
+            !line.includes('items') &&
+            /\d/.test(line)
+        ) ||
+        normalizedLines.find(
+          (line: string) => line.includes('subtotal') && /\d/.test(line)
+        );
+
+      if (totalLine) {
+        const match = totalLine.match(/[-+]?\d{1,5}(?:\.\d{2})?/);
+        if (match) {
+          extractedAmount = match[0];
+        }
+      }
+
+      // 🧠 Extract date in MM/DD/YYYY format
+      const dateMatch = ocrText.match(/\d{2}\/\d{2}\/\d{4}/);
+      const extractedDate = dateMatch
+        ? new Date(dateMatch[0]).getTime()
+        : undefined;
+
+      const storeInfo = rawLines
+        .filter((line: string) => line.trim() !== '')
+        .slice(0, 2)
+        .join(', ');
+
+      // ✅ Apply extracted info
       setNewExpense((prev) => ({
         ...prev,
+        amount: extractedAmount || prev.amount,
+        purchase_date: extractedDate || prev.purchase_date,
+        place_of_purchase: storeInfo || prev.place_of_purchase,
         note: `${prev.note ? prev.note + '\n' : ''}${ocrText}`,
       }));
 
