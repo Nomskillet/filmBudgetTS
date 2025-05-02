@@ -87,6 +87,7 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
     place_of_purchase,
     purchase_date,
     note,
+    receipt_image_url,
   } = req.body;
 
   if (!userId) {
@@ -121,7 +122,8 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
     responsible,
     place_of_purchase,
     purchase_date,
-    note
+    note,
+    receipt_image_url
   );
 
   if (!updatedExpense) {

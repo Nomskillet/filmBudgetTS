@@ -51,10 +51,16 @@ function SearchResultCard({
                 </p>
               )}
               {expense.note && (
-                <p className="text-sm italic text-gray-600">
-                  Note: {expense.note}
-                </p>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600 italic mb-1">Note:</p>
+                  <ul className="text-sm text-gray-700 list-disc pl-5 whitespace-pre-line">
+                    {expense.note.split('\n').map((line, idx) => (
+                      <li key={idx}>{line.trim()}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
+
               {expense.receipt_image_url && (
                 <div className="mt-2">
                   <img

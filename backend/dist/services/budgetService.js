@@ -188,7 +188,8 @@ const updateExpenseInDB = (
   responsible,
   place_of_purchase,
   purchase_date,
-  note
+  note,
+  receipt_image_url // ✅ NEW ARGUMENT
 ) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const result = yield db_1.default.query(
@@ -199,8 +200,9 @@ const updateExpenseInDB = (
          responsible = $4,
          place_of_purchase = $5,
          purchase_date = $6,
-         note = $7
-     WHERE id = $8
+         note = $7,
+         receipt_image_url = $8 -- ✅ NEW FIELD
+     WHERE id = $9
      RETURNING *`,
       [
         description,
@@ -210,6 +212,7 @@ const updateExpenseInDB = (
         place_of_purchase,
         purchase_date ? new Date(purchase_date).toISOString() : null,
         note,
+        receipt_image_url, // ✅ NEW VALUE
         expenseId,
       ]
     );

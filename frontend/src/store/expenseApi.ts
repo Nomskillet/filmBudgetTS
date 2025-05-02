@@ -1,4 +1,3 @@
-// store/expenseApi.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { Expense } from './expenseSlice'; // adjust path if needed
 
@@ -38,7 +37,6 @@ export const expenseApi = createApi({
     >({
       query: ({ budgetId, expenseData }) => ({
         url: `/budget/${budgetId}/expense`,
-
         method: 'POST',
         body: expenseData,
       }),
@@ -46,9 +44,23 @@ export const expenseApi = createApi({
         { type: 'Expenses', id: budgetId },
       ],
     }),
+
     updateExpense: builder.mutation<
       void,
-      { budgetId: number; expenseId: number; expenseData: Partial<Expense> }
+      {
+        budgetId: number;
+        expenseId: number;
+        expenseData: {
+          description: string;
+          amount: number;
+          owner: string;
+          responsible: string;
+          place_of_purchase: string;
+          purchase_date?: string;
+          note: string;
+          receipt_image_url?: string; // ✅ explicitly supported
+        };
+      }
     >({
       query: ({ budgetId, expenseId, expenseData }) => ({
         url: `/expenses/${budgetId}/${expenseId}`,
@@ -59,6 +71,7 @@ export const expenseApi = createApi({
         { type: 'Expenses', id: budgetId },
       ],
     }),
+
     deleteExpense: builder.mutation<
       void,
       { expenseId: number; budgetId: number }

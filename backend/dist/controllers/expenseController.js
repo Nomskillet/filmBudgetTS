@@ -123,6 +123,7 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
       place_of_purchase,
       purchase_date,
       note,
+      receipt_image_url,
     } = req.body;
     if (!userId) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -151,7 +152,8 @@ exports.updateExpense = (0, catchAsync_1.default)((req, res) =>
       responsible,
       place_of_purchase,
       purchase_date,
-      note
+      note,
+      receipt_image_url
     );
     if (!updatedExpense) {
       res.status(404).json({ error: 'Expense not found' });

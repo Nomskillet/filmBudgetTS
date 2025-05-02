@@ -160,7 +160,8 @@ export const updateExpenseInDB = async (
   responsible?: string,
   place_of_purchase?: string,
   purchase_date?: number,
-  note?: string
+  note?: string,
+  receipt_image_url?: string // ✅ NEW ARGUMENT
 ) => {
   const result = await pool.query(
     `UPDATE expenses 
@@ -170,8 +171,9 @@ export const updateExpenseInDB = async (
          responsible = $4,
          place_of_purchase = $5,
          purchase_date = $6,
-         note = $7
-     WHERE id = $8
+         note = $7,
+         receipt_image_url = $8 -- ✅ NEW FIELD
+     WHERE id = $9
      RETURNING *`,
     [
       description,
@@ -181,6 +183,7 @@ export const updateExpenseInDB = async (
       place_of_purchase,
       purchase_date ? new Date(purchase_date).toISOString() : null,
       note,
+      receipt_image_url, // ✅ NEW VALUE
       expenseId,
     ]
   );

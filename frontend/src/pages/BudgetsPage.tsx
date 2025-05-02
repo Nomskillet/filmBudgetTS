@@ -236,6 +236,7 @@ function BudgetsPage() {
             : undefined,
 
           note: editExpenseData.note,
+          receipt_image_url: editExpenseData.receipt_image_url,
         },
         budgetId: activeBudget,
       }).unwrap();
@@ -298,27 +299,32 @@ function BudgetsPage() {
 
       const ocrText = ocrResponse.data.ocr_text;
 
-      // 🧠 Extract amount from "total" line
       let extractedAmount = '';
       const rawLines = ocrText.split('\n');
       const normalizedLines = rawLines.map((line: string) =>
         line.trim().toLowerCase()
       );
 
-      // Try to find "total" first (excluding tax lines), fallback to "subtotal"
+      // Try to find best "total" line
       const totalLine =
         normalizedLines.find(
           (line: string) =>
-            line.includes('total') &&
-            !line.includes('subtotal') &&
-            !line.includes('tax') &&
-            !line.includes('number') &&
-            !line.includes('items') &&
+            /(grand\s*total|total\s*amount|amount\s*due|amount\s*paid|total)/i.test(
+              line
+            ) &&
+            !/subtotal|tax|items|number/i.test(line) &&
             /\d/.test(line)
         ) ||
-        normalizedLines.find(
-          (line: string) => line.includes('subtotal') && /\d/.test(line)
-        );
+        normalizedLines
+          .filter((line: string) => /\d{1,5}(?:\.\d{2})/.test(line))
+          .sort((a: string, b: string) => {
+            const aMatch = a.match(/\d{1,5}(?:\.\d{2})/);
+            const bMatch = b.match(/\d{1,5}(?:\.\d{2})/);
+            return (
+              (bMatch ? parseFloat(bMatch[0]) : 0) -
+              (aMatch ? parseFloat(aMatch[0]) : 0)
+            );
+          })[0];
 
       if (totalLine) {
         const match = totalLine.match(/[-+]?\d{1,5}(?:\.\d{2})?/);
@@ -328,9 +334,12 @@ function BudgetsPage() {
       }
 
       // 🧠 Extract date in MM/DD/YYYY format
-      const dateMatch = ocrText.match(/\d{2}\/\d{2}\/\d{4}/);
+      const dateMatch = ocrText.match(
+        /\b(\d{1,2})([/-])(\d{1,2})\2(\d{2,4})\b/
+      );
+
       const extractedDate = dateMatch
-        ? new Date(dateMatch[0]).getTime()
+        ? new Date(`${dateMatch[1]}/${dateMatch[3]}/${dateMatch[4]}`).getTime()
         : undefined;
 
       const storeInfo = rawLines
@@ -344,7 +353,19 @@ function BudgetsPage() {
         amount: extractedAmount || prev.amount,
         purchase_date: extractedDate || prev.purchase_date,
         place_of_purchase: storeInfo || prev.place_of_purchase,
-        note: `${prev.note ? prev.note + '\n' : ''}${ocrText}`,
+        note:
+          `${prev.note ? prev.note + '\n' : ''}Extracted Items:\n\n` +
+          rawLines
+            .filter((line: string) => /\d{1,5}(?:\.\d{2})/.test(line)) // lines with a price
+            .map((line: string) => {
+              const match = line.match(/(.+?)\s+(\d{1,5}(?:\.\d{2}))/);
+              const label = match
+                ? match[1].replace(/[^a-zA-Z0-9\s]/g, '').trim()
+                : line;
+              const price = match ? `$${match[2]}` : '';
+              return `• ${label}${price ? ` – ${price}` : ''}`;
+            })
+            .join('\n'),
       }));
 
       toast.success('OCR completed and note updated!');
