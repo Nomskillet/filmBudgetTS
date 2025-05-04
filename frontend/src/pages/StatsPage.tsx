@@ -26,10 +26,10 @@ function StatsPage() {
     (sum, b) => sum + Number(b.budget || 0),
     0
   );
-  const totalSpent = expenses.reduce(
-    (sum, e) => sum + Number(e.amount || 0),
-    0
-  );
+  const totalSpent = expenses
+    .filter((e) => !e.deleted)
+    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
   const totalRemaining = totalBudget - totalSpent;
 
   const stats = [
