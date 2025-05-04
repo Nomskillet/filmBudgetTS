@@ -16,8 +16,8 @@ function StatsPage() {
 
   if (budgetsLoading || expensesLoading) {
     return (
-      <div className="text-center mt-12 text-gray-500 text-lg">
-        Loading stats...
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-purple-200 to-purple-300">
+        <p className="text-gray-700 text-lg font-medium">Loading stats...</p>
       </div>
     );
   }
@@ -56,28 +56,30 @@ function StatsPage() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto mt-8 p-6 bg-white shadow-lg rounded-xl">
-      <h1 className="text-4xl font-bold mb-8 text-purple-700 text-center">
-        📊 Budget Stats Dashboard
-      </h1>
+    <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-purple-200 to-indigo-300 px-4 pt-20 sm:pt-24">
+      <div className="w-full max-w-4xl bg-white shadow-xl rounded-xl p-6 sm:p-8">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-purple-700 text-center">
+          📊 Budget Stats Dashboard
+        </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="text-2xl">{stat.icon}</div>
-              <div>
-                <p className="text-gray-500 text-sm">{stat.label}</p>
-                <p className="text-xl font-semibold text-gray-800">
-                  {stat.value}
-                </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-white rounded-lg p-4 shadow-md border border-gray-200 hover:shadow-lg transition"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="text-3xl">{stat.icon}</div>
+                <div>
+                  <p className="text-gray-500 text-sm">{stat.label}</p>
+                  <p className="text-xl font-semibold text-gray-800">
+                    {stat.value}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );

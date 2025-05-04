@@ -428,102 +428,104 @@ function BudgetsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-8 p-6 bg-white shadow-lg rounded-lg">
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold text-gray-800">Budget Dashboard</h1>
-        <Link to="/add-budget">
-          <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-            + Add Budget
-          </button>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-200 to-indigo-300 px-4 py-10">
+      <div className="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-md">
+        <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-800">Budget Dashboard</h1>
+          <Link to="/add-budget">
+            <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
+              + Add Budget
+            </button>
+          </Link>
+        </div>
 
-      <input
-        type="text"
-        placeholder="Search budgets..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mb-4 p-2 border rounded w-full"
-      />
-
-      {showAddExpenseModal !== null && (
-        <AddExpenseModal
-          newExpense={newExpense}
-          setNewExpense={setNewExpense}
-          handleAddExpense={handleAddExpense}
-          closeModal={() => setShowAddExpenseModal(null)}
-          file={file}
-          setFile={setFile}
-          handleUploadAndOCR={handleUploadAndOCR}
-          ocrLoading={ocrLoading}
+        <input
+          type="text"
+          placeholder="Search budgets..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-4 p-2 border rounded w-full"
         />
-      )}
 
-      <ul className="space-y-4">
-        {search.trim() === ''
-          ? budgets.map((budget) => {
-              const expenses = allExpenses.filter(
-                (exp) => exp.budget_id === budget.id && !exp.deleted
-              );
+        {showAddExpenseModal !== null && (
+          <AddExpenseModal
+            newExpense={newExpense}
+            setNewExpense={setNewExpense}
+            handleAddExpense={handleAddExpense}
+            closeModal={() => setShowAddExpenseModal(null)}
+            file={file}
+            setFile={setFile}
+            handleUploadAndOCR={handleUploadAndOCR}
+            ocrLoading={ocrLoading}
+          />
+        )}
 
-              return (
-                <BudgetCard
+        <ul className="space-y-4">
+          {search.trim() === ''
+            ? budgets.map((budget) => {
+                const expenses = allExpenses.filter(
+                  (exp) => exp.budget_id === budget.id && !exp.deleted
+                );
+
+                return (
+                  <BudgetCard
+                    key={budget.id}
+                    budget={budget}
+                    expenses={expenses}
+                    editingId={editingId}
+                    editData={editData}
+                    onEditClick={(budget, dynamicSpent) => {
+                      setEditingId(budget.id);
+                      setEditData({
+                        title: budget.title,
+                        budget: budget.budget.toString(),
+                        spent: dynamicSpent.toString(),
+                        owner: budget.owner || '',
+                        responsible: budget.responsible || '',
+                        stage: budget.stage || '',
+                      });
+                    }}
+                    onDeleteClick={handleDelete}
+                    onSaveEdit={handleUpdate}
+                    onCancelEdit={() => setEditingId(null)}
+                    onViewExpenses={handleViewExpenses}
+                    onAddExpenseClick={setShowAddExpenseModal}
+                    onEditChange={(field, value) =>
+                      setEditData((prev) => ({ ...prev, [field]: value }))
+                    }
+                  />
+                );
+              })
+            : filteredExpenseGroups.map(({ budget, expenses }) => (
+                <SearchResultCard
                   key={budget.id}
                   budget={budget}
                   expenses={expenses}
-                  editingId={editingId}
-                  editData={editData}
-                  onEditClick={(budget, dynamicSpent) => {
-                    setEditingId(budget.id);
-                    setEditData({
-                      title: budget.title,
-                      budget: budget.budget.toString(),
-                      spent: dynamicSpent.toString(),
-                      owner: budget.owner || '',
-                      responsible: budget.responsible || '',
-                      stage: budget.stage || '',
-                    });
+                  onEditExpense={(expense, budgetId) => {
+                    setOpenedFromSearch(true);
+                    handleEditExpenseClick(expense, budgetId);
                   }}
-                  onDeleteClick={handleDelete}
-                  onSaveEdit={handleUpdate}
-                  onCancelEdit={() => setEditingId(null)}
-                  onViewExpenses={handleViewExpenses}
-                  onAddExpenseClick={setShowAddExpenseModal}
-                  onEditChange={(field, value) =>
-                    setEditData((prev) => ({ ...prev, [field]: value }))
-                  }
+                  onDeleteExpense={handleDeleteExpense}
                 />
-              );
-            })
-          : filteredExpenseGroups.map(({ budget, expenses }) => (
-              <SearchResultCard
-                key={budget.id}
-                budget={budget}
-                expenses={expenses}
-                onEditExpense={(expense, budgetId) => {
-                  setOpenedFromSearch(true);
-                  handleEditExpenseClick(expense, budgetId);
-                }}
-                onDeleteExpense={handleDeleteExpense}
-              />
-            ))}
-      </ul>
+              ))}
+        </ul>
 
-      {viewExpensesModalBudget && (
-        <ExpensesModal
-          budget={viewExpensesModalBudget}
-          allExpenses={allExpenses}
-          editingExpenseId={editingExpenseId}
-          editExpenseData={editExpenseData}
-          setEditingExpenseId={setEditingExpenseId}
-          setEditExpenseData={setEditExpenseData}
-          handleUpdateExpense={handleUpdateExpense}
-          handleEditExpenseClick={handleEditExpenseClick}
-          handleDeleteExpense={handleDeleteExpense}
-          closeModal={() => setViewExpensesModalBudget(null)}
-        />
-      )}
+        {viewExpensesModalBudget && (
+          <ExpensesModal
+            budget={viewExpensesModalBudget}
+            allExpenses={allExpenses}
+            editingExpenseId={editingExpenseId}
+            editExpenseData={editExpenseData}
+            setEditingExpenseId={setEditingExpenseId}
+            setEditExpenseData={setEditExpenseData}
+            handleUpdateExpense={handleUpdateExpense}
+            handleEditExpenseClick={handleEditExpenseClick}
+            handleDeleteExpense={handleDeleteExpense}
+            closeModal={() => setViewExpensesModalBudget(null)}
+          />
+        )}
+      </div>
     </div>
   );
 }
