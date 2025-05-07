@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import Tesseract from 'tesseract.js';
+import { getOCRResult, saveOCRResult } from '../services/ocrService';
 
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -58,11 +59,21 @@ export const runOCR = async (req: Request, res: Response) => {
   const imagePath = path.join(__dirname, '..', '..', filePath);
 
   try {
+    const cachedText = await getOCRResult(filePath);
+    if (cachedText) {
+      return res.status(200).json({
+        message: 'OCR result retrieved from cache',
+        ocr_text: cachedText,
+      });
+    }
+
     const { data } = await Tesseract.recognize(imagePath, 'eng');
     const extractedText = data.text.trim();
 
+    await saveOCRResult(filePath, extractedText);
+
     res.status(200).json({
-      message: 'OCR completed successfully',
+      message: 'OCR completed and saved',
       ocr_text: extractedText,
     });
   } catch (error) {
