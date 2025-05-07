@@ -140,6 +140,17 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           {ocrLoading ? 'Extracting Text...' : 'Run OCR on Receipt'}
         </button>
 
+        {newExpense.receipt_image_url && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">Preview:</p>
+            <img
+              src={`http://localhost:5001/uploads/${newExpense.receipt_image_url}`}
+              alt="Receipt Preview"
+              className="w-full max-h-64 object-contain border rounded mt-2"
+            />
+          </div>
+        )}
+
         <div className="flex justify-end space-x-2 mt-4">
           <button
             className="px-4 py-2 bg-gray-400 text-white rounded"

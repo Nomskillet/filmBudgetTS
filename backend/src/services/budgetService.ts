@@ -7,6 +7,9 @@ export interface Budget {
   spent: number;
   remaining: number;
   created_at: Date;
+  owner: string | null;
+  responsible: string | null;
+  stage: string;
 }
 
 // Fetch budgets for a specific user
@@ -19,7 +22,7 @@ export const getBudgetsFromDB = (userId: number) =>
  ORDER BY created_at DESC`,
       [userId]
     )
-    .then((result) => result.rows);
+    .then((result: { rows: Budget[] }) => result.rows);
 
 // Add multiple budgets for a specific user
 export const addBudgetsToDB = async (
@@ -92,7 +95,7 @@ export const deleteBudgetFromDB = (id: number, userId: number) =>
        RETURNING id, title, budget, spent, (budget - spent) AS remaining, created_at`,
       [id, userId]
     )
-    .then((result) => result.rows[0]);
+    .then((result: { rows: Budget[] }) => result.rows[0]);
 
 // ✅ FIXED: Fetch expenses (NOT budget_items)
 export const getBudgetItemsFromDB = (budgetId: number, userId: number) =>
@@ -105,7 +108,7 @@ export const getBudgetItemsFromDB = (budgetId: number, userId: number) =>
 `,
       [budgetId, userId]
     )
-    .then((result) => {
+    .then((result: { rows: Budget[] }) => {
       return result.rows;
     });
 
@@ -149,7 +152,7 @@ export const getExpensesFromDB = (budgetId: number) =>
        ORDER BY created_at DESC`,
       [budgetId]
     )
-    .then((result) => result.rows);
+    .then((result: { rows: any[] }) => result.rows);
 
 // Update an expense in the database
 export const updateExpenseInDB = async (
