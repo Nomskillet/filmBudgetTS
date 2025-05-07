@@ -12,6 +12,11 @@ const storage = multer.diskStorage({
   },
 });
 
+const isSafePath = (filePath: string): boolean => {
+  const normalized = path.normalize(filePath);
+  return !normalized.includes('..') && !path.isAbsolute(filePath);
+};
+
 export const upload = multer({ storage });
 
 export const handleImageUpload = (req: Request, res: Response): void => {
@@ -29,8 +34,8 @@ export const handleImageUpload = (req: Request, res: Response): void => {
 export const extractTextFromImage = async (req: Request, res: Response) => {
   const { filePath } = req.body;
 
-  if (!filePath || !fs.existsSync(filePath)) {
-    return res.status(400).json({ error: 'Valid filePath is required' });
+  if (!filePath || !isSafePath(filePath) || !fs.existsSync(filePath)) {
+    return res.status(400).json({ error: 'Invalid or unsafe filePath' });
   }
 
   try {
@@ -44,11 +49,13 @@ export const extractTextFromImage = async (req: Request, res: Response) => {
 };
 
 export const runOCR = async (req: Request, res: Response) => {
-  const imagePath = path.join(__dirname, '..', '..', req.body.filePath);
+  const { filePath } = req.body;
 
-  if (!imagePath) {
-    return res.status(400).json({ error: 'Image path is required' });
+  if (!filePath || !isSafePath(filePath)) {
+    return res.status(400).json({ error: 'Invalid or unsafe file path' });
   }
+
+  const imagePath = path.join(__dirname, '..', '..', filePath);
 
   try {
     const { data } = await Tesseract.recognize(imagePath, 'eng');
