@@ -185,7 +185,7 @@ function BudgetsPage() {
         place_of_purchase: '',
         purchase_date: undefined,
         note: '',
-        receipt_image_url: '', // ✅ reset this
+        receipt_image_url: '',
       });
       setShowAddExpenseModal(null);
     } catch (err) {
@@ -244,10 +244,8 @@ function BudgetsPage() {
       toast.success('Expense updated successfully!');
       setEditingExpenseId(null);
 
-      // ✅ Critical part for dynamic update
       refetch();
 
-      // ✅ Modal cleanup
       if (openedFromSearch) {
         setViewExpensesModalBudget(null);
         setOpenedFromSearch(false);
@@ -333,7 +331,7 @@ function BudgetsPage() {
         }
       }
 
-      // 🧠 Extract date in MM/DD/YYYY format
+      // Extract date in MM/DD/YYYY format
       const dateMatch = ocrText.match(
         /\b(\d{1,2})([/-])(\d{1,2})\2(\d{2,4})\b/
       );
@@ -347,7 +345,7 @@ function BudgetsPage() {
         .slice(0, 2)
         .join(', ');
 
-      // ✅ Apply extracted info
+      // Apply extracted info
       setNewExpense((prev) => ({
         ...prev,
         amount: extractedAmount || prev.amount,
