@@ -144,7 +144,9 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           <div className="mb-4">
             <p className="text-sm text-gray-600">Preview:</p>
             <img
-              src={`http://localhost:5001/uploads/${newExpense.receipt_image_url}`}
+              src={`/api/upload/image/${encodeURIComponent(
+                newExpense.receipt_image_url
+              )}`}
               alt="Receipt Preview"
               className="w-full max-h-64 object-contain border rounded mt-2"
             />

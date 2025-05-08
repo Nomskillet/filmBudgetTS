@@ -171,7 +171,7 @@ function BudgetsPage() {
             ? new Date(newExpense.purchase_date).toISOString()
             : undefined,
           note: newExpense.note,
-          receipt_image_url: receiptImage, // ✅ ensure this is set
+          receipt_image_url: receiptImage,
         },
       }).unwrap();
 

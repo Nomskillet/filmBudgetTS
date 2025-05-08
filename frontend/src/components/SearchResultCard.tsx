@@ -64,7 +64,9 @@ function SearchResultCard({
               {expense.receipt_image_url && (
                 <div className="mt-2">
                   <img
-                    src={`http://localhost:5001/uploads/${expense.receipt_image_url}`}
+                    src={`/api/upload/image/${encodeURIComponent(
+                      expense.receipt_image_url
+                    )}`}
                     alt="Receipt"
                     className="max-w-xs border rounded"
                   />

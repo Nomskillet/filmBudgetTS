@@ -251,7 +251,9 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
                             Current Receipt Preview:
                           </p>
                           <img
-                            src={`http://localhost:5001/uploads/${editExpenseData.receipt_image_url}`}
+                            src={`/api/upload/image/${encodeURIComponent(
+                              editExpenseData.receipt_image_url
+                            )}`}
                             alt="Uploaded Receipt"
                             className="w-full max-w-xs border rounded"
                           />
@@ -330,7 +332,9 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
                               Filename: {expense.receipt_image_url}
                             </p>
                             <img
-                              src={`http://localhost:5001/uploads/${expense.receipt_image_url}`}
+                              src={`/api/upload/image/${encodeURIComponent(
+                                expense.receipt_image_url
+                              )}`}
                               alt="Receipt"
                               className="w-full max-w-xs border rounded"
                             />
