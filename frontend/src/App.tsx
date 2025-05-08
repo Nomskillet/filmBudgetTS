@@ -9,13 +9,11 @@ function App() {
     () => !!localStorage.getItem('token')
   );
 
-  // ✅ Add user state for role + email
   const [user, setUser] = useState<{
     role: string;
     email: string;
   } | null>(null);
 
-  // ✅ Load user info from localStorage on page load (if logged in)
   useEffect(() => {
     const role = localStorage.getItem('userRole');
     const email = localStorage.getItem('userEmail');
@@ -37,7 +35,6 @@ function App() {
 
   return (
     <div>
-      {/* ✅ Pass user into Navbar */}
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} user={user!} />
       {routing}
     </div>

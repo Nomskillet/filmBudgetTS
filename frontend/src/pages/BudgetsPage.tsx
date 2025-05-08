@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ClipLoader from 'react-spinners/ClipLoader';
 import api from '../utils/axios';
@@ -428,7 +428,6 @@ function BudgetsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-200 to-indigo-300 px-4 py-10">
       <div className="max-w-4xl mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-md">
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold text-gray-800">Budget Dashboard</h1>
           <Link to="/add-budget">

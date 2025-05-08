@@ -26,7 +26,6 @@ interface AddExpenseModalProps {
   handleAddExpense: () => void;
   closeModal: () => void;
 
-  // 🆕 OCR-related props
   file: File | null;
   setFile: React.Dispatch<React.SetStateAction<File | null>>;
   handleUploadAndOCR: () => void;
