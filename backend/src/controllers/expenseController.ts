@@ -12,7 +12,6 @@ export const addExpense = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const budgetId = parseInt(req.params.budgetId, 10);
 
-  // 💡 Now accepting metadata
   const {
     description,
     amount,
@@ -34,7 +33,6 @@ export const addExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  // 👉 Call service with full metadata
   await addExpenseToDB(
     budgetId,
     description,
@@ -71,7 +69,6 @@ export const getExpenses = catchAsync(async (req: Request, res: Response) => {
     return res.json(expenses);
   }
 
-  // ✅ No budgetId param: fetch all expenses
   const allExpenses = await pool.query('SELECT * FROM expenses');
   res.json(allExpenses.rows);
 });
@@ -143,7 +140,7 @@ export const updateExpense = catchAsync(async (req: Request, res: Response) => {
   res.json(updatedExpense);
 });
 
-// ✅ Add a new delete function
+// Add a new delete function
 export const deleteExpense = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const expenseId = parseInt(req.params.expenseId, 10);
@@ -158,7 +155,7 @@ export const deleteExpense = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  //  Get the expense details (amount & budget_id)
+  //  Get the expense details
   const expenseResult = await pool.query(
     `SELECT amount, budget_id FROM expenses WHERE id = $1`,
     [expenseId]

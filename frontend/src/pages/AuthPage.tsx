@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import api from '../utils/axios';
 import 'react-toastify/dist/ReactToastify.css';
 import { HiMail, HiLockClosed } from 'react-icons/hi';
@@ -67,7 +67,6 @@ function AuthPage({ initialMode, setIsLoggedIn }: AuthPageProps) {
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-purple-200 to-indigo-300 px-4">
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       <div className="w-full max-w-md bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-xl shadow-xl border border-gray-200">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-extrabold text-purple-600">
