@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Budget } from '../store/budgetSlice';
 import type { Expense } from '../store/expenseSlice';
+import SecureReceiptImage from './SecureReceiptImage';
 
 interface ExpensesModalProps {
   budget: Budget;
@@ -144,37 +145,63 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
                             const formData = new FormData();
                             formData.append('image', file);
 
-                            fetch('http://localhost:5001/api/upload', {
+                            fetch('/api/upload', {
                               method: 'POST',
                               body: formData,
+                              headers: {
+                                Authorization: `Bearer ${
+                                  localStorage.getItem('token') || ''
+                                }`,
+                              },
                             })
                               .then((res) => res.json())
                               .then((data) => {
-                                const filePath = data.filePath;
-                                const filename = filePath.split('/').pop();
-                                if (!filename) return;
+                                const imageId = data.imageId;
+                                if (!imageId) {
+                                  console.error(
+                                    'Missing imageId from upload response:',
+                                    data
+                                  );
+                                  alert('Failed to upload image.');
+                                  return;
+                                }
 
                                 setEditExpenseData((prev) => ({
                                   ...prev,
-                                  receipt_image_url: filename,
+                                  receipt_image_url: imageId.toString(),
                                 }));
 
-                                return fetch(
-                                  'http://localhost:5001/api/upload/ocr',
-                                  {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({ filePath }),
-                                  }
-                                );
+                                return fetch('/api/upload/ocr', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    Authorization: `Bearer ${
+                                      localStorage.getItem('token') || ''
+                                    }`,
+                                  },
+                                  body: JSON.stringify({ imageId }),
+                                });
                               })
                               .then((res) => res?.json())
                               .then((ocr) => {
-                                if (!ocr) return;
-                                const ocrText = ocr.ocr_text;
+                                const ocrText = ocr?.ocr_text;
+
+                                if (
+                                  typeof ocrText !== 'string' ||
+                                  !ocrText.trim()
+                                ) {
+                                  console.error(
+                                    'OCR response missing or invalid text:',
+                                    ocr
+                                  );
+                                  alert(
+                                    'OCR failed to extract text from the image.'
+                                  );
+                                  return;
+                                }
+
                                 const rawLines = ocrText.split('\n');
+
                                 const normalizedLines = rawLines.map(
                                   (line: string) => line.trim().toLowerCase()
                                 );
@@ -245,20 +272,12 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
                         />
                       </label>
 
-                      {editExpenseData.receipt_image_url && (
-                        <div className="mt-2">
-                          <p className="text-sm text-gray-600 italic mb-1">
-                            Current Receipt Preview:
-                          </p>
-                          <img
-                            src={`/api/upload/image/${encodeURIComponent(
-                              editExpenseData.receipt_image_url
-                            )}`}
-                            alt="Uploaded Receipt"
-                            className="w-full max-w-xs border rounded"
+                      {typeof editExpenseData.receipt_image_url === 'string' &&
+                        editExpenseData.receipt_image_url && (
+                          <SecureReceiptImage
+                            imageId={editExpenseData.receipt_image_url}
                           />
-                        </div>
-                      )}
+                        )}
 
                       <div className="flex justify-end gap-2 mt-2">
                         <button
@@ -324,21 +343,9 @@ const ExpensesModal: React.FC<ExpensesModalProps> = ({
                         )}
 
                         {expense.receipt_image_url && (
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-600 italic mb-1">
-                              Receipt Image:
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Filename: {expense.receipt_image_url}
-                            </p>
-                            <img
-                              src={`/api/upload/image/${encodeURIComponent(
-                                expense.receipt_image_url
-                              )}`}
-                              alt="Receipt"
-                              className="w-full max-w-xs border rounded"
-                            />
-                          </div>
+                          <SecureReceiptImage
+                            imageId={expense.receipt_image_url}
+                          />
                         )}
                       </div>
                       <div className="flex flex-col gap-2">

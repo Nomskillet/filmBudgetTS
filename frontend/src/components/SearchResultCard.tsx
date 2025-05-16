@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Budget } from '../store/budgetSlice';
 import type { Expense } from '../store/expenseSlice';
+import SecureReceiptImage from './SecureReceiptImage';
 
 interface SearchResultCardProps {
   budget: Budget;
@@ -63,13 +64,8 @@ function SearchResultCard({
 
               {expense.receipt_image_url && (
                 <div className="mt-2">
-                  <img
-                    src={`/api/upload/image/${encodeURIComponent(
-                      expense.receipt_image_url
-                    )}`}
-                    alt="Receipt"
-                    className="max-w-xs border rounded"
-                  />
+                  <p className="text-sm text-gray-600 italic mb-1">Receipt:</p>
+                  <SecureReceiptImage imageId={expense.receipt_image_url} />
                 </div>
               )}
             </div>

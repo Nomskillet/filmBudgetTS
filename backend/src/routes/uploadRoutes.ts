@@ -5,14 +5,20 @@ import {
   upload,
   handleImageUpload,
   runOCR,
+  serveImageById,
 } from '../controllers/uploadController';
 import { isSafePath } from '../utils/isSafePath';
+import authMiddleware from '../middlewares/authMiddleware';
+import catchAsync from '../utils/catchAsync';
+import db from '../db';
 
 const router: Router = express.Router();
 
-router.post('/', upload.single('image'), handleImageUpload);
+router.post('/', authMiddleware, upload.single('image'), (req, res, next) => {
+  handleImageUpload(req, res).catch(next);
+});
 
-router.post('/ocr', (req: Request, res: Response, next) => {
+router.post('/ocr', authMiddleware, (req: Request, res: Response, next) => {
   runOCR(req, res).catch(next);
 });
 
@@ -42,5 +48,7 @@ const getImageHandler: RequestHandler<ImageParams, any, any, any> = (
 };
 
 router.get('/image/:filename', getImageHandler);
+
+router.get('/image/id/:imageId', authMiddleware, catchAsync(serveImageById));
 
 export default router;

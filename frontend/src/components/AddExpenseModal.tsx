@@ -1,4 +1,5 @@
 import React from 'react';
+import SecureReceiptImage from './SecureReceiptImage';
 
 interface AddExpenseModalProps {
   newExpense: {
@@ -44,7 +45,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+      <div className="bg-white rounded-lg shadow-lg w-[95%] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <h2 className="text-xl font-bold mb-4">Add Expense</h2>
         <input
           type="text"
@@ -120,7 +121,6 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           }
         />
 
-        {/* 🆕 OCR: File input + button */}
         <input
           type="file"
           accept="image/*"
@@ -142,13 +142,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
         {newExpense.receipt_image_url && (
           <div className="mb-4">
             <p className="text-sm text-gray-600">Preview:</p>
-            <img
-              src={`/api/upload/image/${encodeURIComponent(
-                newExpense.receipt_image_url
-              )}`}
-              alt="Receipt Preview"
-              className="w-full max-h-64 object-contain border rounded mt-2"
-            />
+            <SecureReceiptImage imageId={newExpense.receipt_image_url} />
           </div>
         )}
 
