@@ -20,17 +20,22 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     return;
   }
 
-  const decoded = jwt.verify(token, JWT_SECRET) as
-    | { id: number; email?: string }
-    | undefined;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as
+      | { id: number; email?: string }
+      | undefined;
 
-  if (!decoded || !decoded.id) {
+    if (!decoded || !decoded.id) {
+      res.status(401).json({ message: 'Unauthorized: Invalid token' });
+      return;
+    }
+
+    req.user = { id: decoded.id, email: decoded.email ?? '' };
+    next();
+  } catch (err) {
+    console.error('Token verification failed:', err);
     res.status(401).json({ message: 'Unauthorized: Invalid token' });
-    return;
   }
-
-  req.user = { id: decoded.id, email: decoded.email ?? '' };
-  next();
 };
 
 export default authMiddleware;

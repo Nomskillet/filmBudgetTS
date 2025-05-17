@@ -24,7 +24,6 @@ app.get('/', (req, res) => {
   res.send('Film Budget API is running!');
 });
 
-//Global Error Handler (No Try-Catch Needed)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: err.message || 'Internal Server Error' });

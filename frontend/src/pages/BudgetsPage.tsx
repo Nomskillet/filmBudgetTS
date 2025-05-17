@@ -279,21 +279,18 @@ function BudgetsPage() {
     try {
       setOcrLoading(true);
 
-      // Step 1: Upload the image
       const uploadResponse = await api.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      const filePath = uploadResponse.data.filePath;
-      const filename = filePath.split('/').pop();
+      const { imageId } = uploadResponse.data;
 
       setNewExpense((prev) => ({
         ...prev,
-        receipt_image_url: filename || '',
+        receipt_image_url: imageId.toString(),
       }));
 
-      // Step 2: Run OCR
-      const ocrResponse = await api.post('/upload/ocr', { filePath });
+      const ocrResponse = await api.post('/upload/ocr', { imageId });
 
       const ocrText = ocrResponse.data.ocr_text;
 
@@ -303,7 +300,6 @@ function BudgetsPage() {
         line.trim().toLowerCase()
       );
 
-      // Try to find best "total" line
       const totalLine =
         normalizedLines.find(
           (line: string) =>
@@ -331,7 +327,6 @@ function BudgetsPage() {
         }
       }
 
-      // Extract date in MM/DD/YYYY format
       const dateMatch = ocrText.match(
         /\b(\d{1,2})([/-])(\d{1,2})\2(\d{2,4})\b/
       );
@@ -345,7 +340,6 @@ function BudgetsPage() {
         .slice(0, 2)
         .join(', ');
 
-      // Apply extracted info
       setNewExpense((prev) => ({
         ...prev,
         amount: extractedAmount || prev.amount,

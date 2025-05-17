@@ -143,7 +143,6 @@ const expenseSlice = createSlice({
           expenses: Expense[];
         };
 
-        console.log('Fetched expenses:', expenses);
         state.items[budgetId] = expenses;
       })
       .addCase(fetchExpenses.rejected, (state, action) => {
