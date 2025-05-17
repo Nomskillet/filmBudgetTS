@@ -1,5 +1,6 @@
 import React from 'react';
 import SecureReceiptImage from './SecureReceiptImage';
+import { toast } from 'react-toastify';
 
 interface AddExpenseModalProps {
   newExpense: {
@@ -43,6 +44,27 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   handleUploadAndOCR,
   ocrLoading,
 }) => {
+  const handleValidateAndAdd = () => {
+    const { description, amount, owner } = newExpense;
+
+    if (!description.trim()) {
+      toast.error('Description is required');
+      return;
+    }
+
+    if (!amount.trim()) {
+      toast.error('Amount is required');
+      return;
+    }
+
+    if (!owner.trim()) {
+      toast.error('Owner is required');
+      return;
+    }
+
+    handleAddExpense();
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
       <div className="bg-white rounded-lg shadow-lg w-[95%] max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
@@ -155,7 +177,7 @@ const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           </button>
           <button
             className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            onClick={handleAddExpense}
+            onClick={handleValidateAndAdd}
           >
             Add Expense
           </button>
